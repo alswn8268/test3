@@ -1,0 +1,11 @@
+node_modules/
+render/vendor/
+__pycache__/
+.pytest_cache/
+
+# 렌더 결과물 (언제든 다시 만들 수 있고 용량이 큼)
+episodes/*/clips/
+episodes/*/preview/
+episodes/*/final.mp4
+episodes/*/*.fcproj
+out/

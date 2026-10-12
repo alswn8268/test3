@@ -1,0 +1,17 @@
+{
+  "name": "shorts-channel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "월급 사용설명서 — 숏폼 제작 파이프라인",
+  "type": "module",
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "stills": "node render/capture.mjs",
+    "render": "node render/capture.mjs"
+  },
+  "dependencies": {
+    "@fontsource/noto-serif-kr": "5.2.8",
+    "playwright": "1.56.1",
+    "three": "0.180.0"
+  }
+}
