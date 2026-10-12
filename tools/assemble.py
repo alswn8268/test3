@@ -89,7 +89,8 @@ def main(argv: list[str] | None = None) -> int:
         channel = load_channel(a.channel)
         mix_wav = d / "audio.wav"
         gain = 0.0 if a.bgm else 0.55  # 외부 음원을 쓰면 합성 BGM은 빼고 효과음만
-        audio.write_wav(mix_wav, audio.mix(scenes, channel["bgm"]["style"], audio.episode_seed(channel, a.ep), gain))
+        audio.write_wav(mix_wav, audio.mix(scenes, channel["bgm"]["style"], audio.episode_seed(channel, a.ep), gain,
+                                                channel.get("theme", "ledger")))
     with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8") as f:
         f.writelines(f"file '{c.resolve()}'\n" for c in clips)
         list_file = Path(f.name)

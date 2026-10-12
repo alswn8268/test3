@@ -1,6 +1,7 @@
 {
   "slug": "spelling",
   "name": "한 끗 맞춤법",
+  "theme": "notebook",
   "concept": "보고서·카톡에서 자주 틀리는 맞춤법을 3초 구별법으로 — 매 편 헷갈리는 짝 하나",
   "voice": "퀴즈 내듯 가볍게, 정답은 확실하게 (~가 맞아요, ~로 기억하세요)",
   "pillars": [
@@ -13,7 +14,8 @@
   "colors": {
     "paper": "#ECEDF2",
     "ink": "#14151A",
-    "signal": "#2E7DFF"
+    "signal": "#2E7DFF",
+    "board": "#24423A"
   },
   "props": {
     "hero": "pencil",

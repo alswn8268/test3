@@ -209,6 +209,18 @@ def sfx(name: str, rng: np.random.Generator) -> np.ndarray:
         t = _t(0.35)
         return (np.sin(2 * np.pi * 68 * t) * np.exp(-t / 0.09)
                 + _filter(rng.standard_normal(len(t)), 100, 2500) * np.exp(-t / 0.03) * 0.7)
+    if name == "page":  # 공책 넘기는 소리 (맞춤법 채널 전환)
+        t = _t(0.32)
+        env = np.sin(np.pi * np.clip(t / 0.32, 0, 1)) * (1 + 0.6 * np.sin(2 * np.pi * 38 * t))
+        return _filter(rng.standard_normal(len(t)), 1500, 9000) * env * 0.45
+    if name == "scribble":  # 펜으로 긋는 소리 (취소선·동그라미)
+        t = _t(0.28)
+        env = np.clip(np.sin(2 * np.pi * 14 * t), 0, 1) * np.exp(-t / 0.2)
+        return _filter(rng.standard_normal(len(t)), 2500, 8000) * env * 0.5
+    if name == "boing":  # 통 튀는 소리 (호기심 채널 전환)
+        t = _t(0.3)
+        f = 220 + 380 * np.exp(-t / 0.05) + 40 * np.sin(2 * np.pi * 18 * t)
+        return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / 0.1) * 0.7
     if name == "impact":  # 후킹 첫 타격
         t = _t(0.8)
         return (np.sin(2 * np.pi * np.cumsum(40 + 60 * np.exp(-t / 0.05)) / SR) * np.exp(-t / 0.25)
@@ -222,15 +234,20 @@ def _highlights(scene: dict) -> int:
     return sum(t.count("[") for t in texts)
 
 
-def sfx_events(scenes: list[dict]) -> list[tuple[float, str, float]]:
+# 채널 테마마다 장면 전환 소리가 다르다 (render.html 의 THEME 과 같은 이름)
+TRANSITION = {"ledger": ("whoosh", 0.3), "sheet": ("key", 0.7), "notebook": ("page", 0.5), "lab": ("boing", 0.4)}
+
+
+def sfx_events(scenes: list[dict], theme: str = "ledger") -> list[tuple[float, str, float]]:
     """(시각, 효과음 이름, 볼륨) 목록. render.html 시간표와 맞춘다."""
+    trans, tgain = TRANSITION.get(theme, TRANSITION["ledger"])
     ev: list[tuple[float, str, float]] = []
     hl0, hld = EVENT_TIMES["highlight"]
     for i, (s, (t0, _)) in enumerate(zip(scenes, timeline(scenes))):
         if i == 0:
             ev.append((0.0, "impact", 0.55))
         else:
-            ev.append((t0 - 0.30, "whoosh", 0.3))
+            ev.append((t0 - (0.30 if trans in ("whoosh", "page") else 0.02), trans, tgain))
         for k in range(_highlights(s)):
             ev.append((t0 + hl0 + k * hld, "pop", 0.35))
         if s["type"] == "number":
@@ -241,17 +258,19 @@ def sfx_events(scenes: list[dict]) -> list[tuple[float, str, float]]:
         if s["type"] == "keys":
             k0, kd = EVENT_TIMES["key"]
             ev += [(t0 + k0 + k * kd, "key", 0.8) for k in range(len(s.get("keys", [])))]
+        if s["type"] == "compare" and theme == "notebook":  # 틀린 쪽 취소선, 맞는 쪽 동그라미
+            ev += [(t0 + 0.55, "scribble", 0.6), (t0 + 0.80, "scribble", 0.6)]
         if s["type"] == "cta":
             ev.append((t0 + EVENT_TIMES["stamp"], "stamp", 0.9))
     return ev
 
 
-def mix(scenes: list[dict], style: str, seed: int, bgm_gain: float = 0.55) -> np.ndarray:
+def mix(scenes: list[dict], style: str, seed: int, bgm_gain: float = 0.55, theme: str = "ledger") -> np.ndarray:
     total = sum(s["dur"] for s in scenes)
     out = render_bgm(style, seed, total) * bgm_gain
     rng = np.random.default_rng(seed + 1)
     cache: dict[str, np.ndarray] = {}
-    for at, name, gain in sfx_events(scenes):
+    for at, name, gain in sfx_events(scenes, theme):
         if name not in cache:
             cache[name] = sfx(name, rng)
         _add(out, cache[name], at, gain * 0.5, 0.15 if name == "pop" else 0.0)
@@ -277,7 +296,7 @@ def build_episode_audio(ch: str, ep: str) -> Path:
     channel = load_channel(ch)
     scenes = load_script(ch, ep)["scenes"]
     path = episode_dir(ch, ep) / "audio.wav"
-    write_wav(path, mix(scenes, channel["bgm"]["style"], episode_seed(channel, ep)))
+    write_wav(path, mix(scenes, channel["bgm"]["style"], episode_seed(channel, ep), theme=channel.get("theme", "ledger")))
     return path
 
 

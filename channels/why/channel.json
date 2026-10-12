@@ -1,6 +1,7 @@
 {
   "slug": "why",
   "name": "그거 왜 그래?",
+  "theme": "lab",
   "concept": "매일 보는 것의 '왜?'를 30초 안에 — 반전 있는 과학·생활 상식. 논란 대신 호기심으로 멈추게",
   "voice": "말 거는 듯한 단정형 + 반전 ('사실 ~입니다', '~한 셈이죠', '당신 탓이 아닙니다')",
   "pillars": [
@@ -11,10 +12,9 @@
     "무해한 논쟁"
   ],
   "colors": {
-    "paper": "#E8EEF6",
-    "ink": "#12161F",
-    "signal": "#FFC21A",
-    "signal_text": "#9A6A00"
+    "paper": "#4F86F7",
+    "ink": "#0E1A3D",
+    "signal": "#FFC21A"
   },
   "props": {
     "hero": "question",

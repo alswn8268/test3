@@ -19,7 +19,7 @@ def test_channel_config_is_complete(ch):
     c = load_channel(ch)
     for key in ("name", "colors", "props", "bgm", "hashtag", "accounts", "schedule"):
         assert key in c
-    assert {"paper", "ink", "signal"} <= set(c["colors"]) <= {"paper", "ink", "signal", "signal_text"}
+    assert {"paper", "ink", "signal"} <= set(c["colors"]) <= {"paper", "ink", "signal", "signal_text", "board"}
     assert c["bgm"]["style"] in audio.STYLES
     assert c["hashtag"].startswith("#")
 
@@ -159,12 +159,16 @@ def test_review_handles_zero_views():
     assert all(v is None or v == 0 for _, v, _, _ in review.grade(row))
 
 
-def test_post_uses_channel_hashtag():
+def test_post_has_three_platform_sections():
     md = post.build(load_channel("shortcut"), load_script("shortcut", "ep01"), "○", ["엑셀", "직장인", "빠른채우기", "CtrlE"])
     lines = md.splitlines()
-    i = lines.index("## 캡션")
+    for sec in ("## 틱톡", "## 유튜브 쇼츠", "## 인스타그램 릴스"):
+        assert any(line.startswith(sec) for line in lines), sec
+    i = next(n for n, line in enumerate(lines) if line.startswith("## 틱톡"))
     assert lines[i + 1] == "300줄 복붙 3초면 끝 Ctrl + E"
-    assert "#엑셀 #직장인 #빠른채우기 #CtrlE #칼퇴단축키" in md
+    assert lines[i + 2] == "저장해두고 다시 보기"
+    assert lines[i + 3] == "#엑셀 #직장인 #빠른채우기 #CtrlE #칼퇴단축키"
+    assert "제목: Ctrl+E 하나로 300줄 정리" in md
     assert "칼퇴 단축키" in lines[0]
 
 
@@ -175,15 +179,32 @@ def test_hook_rules_ban_controversy_for_curiosity_channel():
         assert word in banned
 
 
-def test_bright_signal_has_readable_text_color():
-    """노랑처럼 밝은 신호색은 종이 위 글자용 색(signal_text)이 따로 있어야 한다."""
+def test_signal_text_is_readable_on_paper():
+    """종이 배경 위 신호색 글자가 읽히는지. 흰 글자+외곽선을 쓰는 lab 테마는 제외."""
     def lum(h):
+        def f(c):
+            return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
         r, g, b = (int(h[i:i + 2], 16) / 255 for i in (1, 3, 5))
-        f = lambda c: c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
         return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
     for ch in list_channels():
-        c = load_channel(ch)["colors"]
-        text = c.get("signal_text", c["signal"])
-        ratio = (lum(c["paper"]) + 0.05) / (lum(text) + 0.05)
-        # 최소선 2.5:1 (노랑 1.4:1 처럼 안 읽히는 색을 막는 용도). 권장은 큰 글자 기준 3:1
+        c = load_channel(ch)
+        if c.get("theme") == "lab":
+            continue
+        col = c["colors"]
+        ratio = (lum(col["paper"]) + 0.05) / (lum(col.get("signal_text", col["signal"])) + 0.05)
+        # 최소선 2.5:1 (노랑처럼 안 읽히는 색을 막는 용도). 권장은 큰 글자 기준 3:1
         assert ratio >= 2.5, (ch, round(ratio, 2))
+
+
+@pytest.mark.parametrize("ch", ["money", "shortcut", "spelling", "why"])
+def test_each_channel_has_its_own_theme(ch):
+    themes = {load_channel(c)["theme"] for c in list_channels()}
+    assert load_channel(ch)["theme"] in {"ledger", "sheet", "notebook", "lab"}
+    assert len(themes) == len(list_channels())
+
+
+def test_theme_transition_sounds_differ():
+    scenes = load_script("spelling", "ep01")["scenes"]
+    names = {th: {n for _, n, _ in audio.sfx_events(scenes, th)} for th in audio.TRANSITION}
+    assert "page" in names["notebook"] and "scribble" in names["notebook"]
+    assert "boing" in names["lab"] and "whoosh" in names["ledger"]

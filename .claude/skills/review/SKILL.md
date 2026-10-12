@@ -5,7 +5,8 @@ description: 업로드 48시간 뒤 인사이트 수치를 channels/<채널>/met
 
 # /review <채널> [편] — 48시간 점검
 
-1. 사람이 준 수치를 `channels/<채널>/metrics.csv` 에 플랫폼마다 한 줄씩 추가 (빠진 숫자는 추측하지 말고 묻기).
+1. 사람이 준 수치를 `channels/<채널>/metrics.csv` 에 플랫폼마다 한 줄씩 추가 — platform 값은 `tiktok` · `youtube` · `reels` 로 통일
+   (빠진 숫자는 추측하지 말고 묻기). 플랫폼마다 3초 유지율·완주율 이름이 달라도 같은 칸에 맞춰 넣는다.
 2. `python -m tools.review <채널> [<편>]` 로 판정표.
 3. `channels/<채널>/learnings.md` 맨 위에 이번 주 항목: 판정표 · 잘된 편과 안 된 편의 차이 · **미달 지표 하나만** 골라 다음 주 규칙 1줄 ·
    2개 이상 통과한 편은 후속편 후보로 backlog 에.

@@ -56,7 +56,7 @@ const browser = await chromium.launch(launch);
 const page = await browser.newPage({ viewport: { width: 1080, height: 1920 }, deviceScaleFactor: 1 });
 page.on('console', m => { if (m.type() === 'error') console.error('[page]', m.text()); });
 page.on('pageerror', e => console.error('[pageerror]', e.message));
-await page.goto(`http://127.0.0.1:${port}/render/render.html?ch=${ch}&ep=${ep}`);
+await page.goto(`http://127.0.0.1:${port}/render/${process.env.RENDER_PAGE || 'render.html'}?ch=${ch}&ep=${ep}`);
 await page.waitForFunction('window.ready === true', null, { timeout: 60000 });
 const scenes = await page.evaluate(() => window.SCENES);
 // CDP 직접 호출이 page.screenshot 보다 빠르다 (프레임당 약 1/3 절약)
