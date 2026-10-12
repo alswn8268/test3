@@ -1,20 +1,51 @@
 import copy
 
+import numpy as np
 import pytest
-from tools import assemble, factcheck, new_episode, post, review, validate
-from tools.common import EPISODES, load_script, plain, timeline
+from tools import assemble, audio, factcheck, new_episode, post, review, validate
+from tools.common import list_channels, list_episodes, load_channel, load_script, plain, timeline
 
-EPS = sorted(p.name for p in EPISODES.glob("ep*") if (p / "script.json").exists())
+ALL = [(ch, ep) for ch in list_channels() for ep in list_episodes(ch)]
 
 
-@pytest.mark.parametrize("ep", EPS)
-def test_existing_episodes_have_no_errors(ep):
-    errors, _ = validate.check(load_script(ep))
+def test_three_channels_with_five_episodes_each():
+    assert set(list_channels()) >= {"money", "shortcut", "spelling", "why"}
+    for ch in ("money", "shortcut", "spelling", "why"):
+        assert len(list_episodes(ch)) >= 5
+
+
+@pytest.mark.parametrize("ch", ["money", "shortcut", "spelling", "why"])
+def test_channel_config_is_complete(ch):
+    c = load_channel(ch)
+    for key in ("name", "colors", "props", "bgm", "hashtag", "accounts", "schedule"):
+        assert key in c
+    assert {"paper", "ink", "signal"} <= set(c["colors"]) <= {"paper", "ink", "signal", "signal_text"}
+    assert c["bgm"]["style"] in audio.STYLES
+    assert c["hashtag"].startswith("#")
+
+
+def test_channels_do_not_share_identity():
+    """계정마다 이름·색·해시태그·음악이 달라야 한다 (같은 채널 복제처럼 보이지 않게)."""
+    cs = [load_channel(ch) for ch in list_channels()]
+    for key in (lambda c: c["name"], lambda c: c["colors"]["signal"], lambda c: c["hashtag"],
+                lambda c: (c["bgm"]["style"], c["bgm"]["seed"])):
+        values = [key(c) for c in cs]
+        assert len(values) == len(set(values))
+
+
+@pytest.mark.parametrize("ch,ep", ALL)
+def test_existing_episodes_have_no_errors(ch, ep):
+    errors, _ = validate.check(load_script(ch, ep))
     assert errors == []
 
 
+def test_no_duplicate_titles_across_channels():
+    titles = [load_script(ch, ep)["title"] for ch, ep in ALL]
+    assert len(titles) == len(set(titles))
+
+
 def test_validate_catches_broken_script():
-    data = copy.deepcopy(load_script("ep01"))
+    data = copy.deepcopy(load_script("money", "ep01"))
     data["scenes"] = data["scenes"][:-1]  # CTA 빠짐 → 11장면, 27초
     data["scenes"][2]["say"] = ""
     errors, _ = validate.check(data)
@@ -22,8 +53,16 @@ def test_validate_catches_broken_script():
     assert "장면 수 11개" in text and "총 길이" in text and "cta" in text and "say" in text
 
 
+def test_validate_requires_keys_on_keys_scene():
+    data = copy.deepcopy(load_script("shortcut", "ep01"))
+    k = next(s for s in data["scenes"] if s["type"] == "keys")
+    k["keys"] = []
+    errors, _ = validate.check(data)
+    assert any("'keys'" in e for e in errors)
+
+
 def test_validate_warns_long_line_and_double_highlight():
-    data = copy.deepcopy(load_script("ep01"))
+    data = copy.deepcopy(load_script("money", "ep01"))
     data["scenes"][1]["lines"] = ["아주아주아주아주긴한줄입니다", "[하나] [둘]"]
     _, warns = validate.check(data)
     assert any("글자" in w for w in warns) and any("강조 2개" in w for w in warns)
@@ -38,15 +77,21 @@ def test_plain_strips_markup():
     assert plain("연봉의 [25%] {0원}") == "연봉의 25% 0원"
 
 
-def test_factcheck_extracts_numbers_and_skips_numbering_labels():
-    claims = factcheck.claims(load_script("ep01"))
-    texts = [t for _, t in claims]
+def test_factcheck_numbers_scope_skips_numbering_labels():
+    claims = factcheck.claims(load_script("money", "ep01"))
     assert (1, "연봉의 25%") in claims
-    assert not any(t.startswith("01  ") for t in texts)
+    assert not any(t.startswith("01  ") for _, t in claims)
+
+
+def test_factcheck_every_scene_scope_covers_rules():
+    data = load_script("spelling", "ep01")
+    claims = factcheck.claims(data, "every_scene")
+    assert len(claims) == 10  # 후킹·CTA 를 뺀 10장면
+    assert any("돼요" in t for _, t in claims)
 
 
 def test_factcheck_keeps_existing_sources_and_checks():
-    data = load_script("ep01")
+    data = load_script("money", "ep01")
     md = factcheck.build(data)
     assert len(factcheck.problems(md)) == len(factcheck.claims(data))
     filled = md.replace("| 01 | 연봉의 25% |  | ☐ |", "| 01 | 연봉의 25% | https://www.nts.go.kr | ✅ |")
@@ -56,11 +101,47 @@ def test_factcheck_keeps_existing_sources_and_checks():
 
 
 def test_srt_follows_scene_timeline():
-    scenes = load_script("ep01")["scenes"]
+    scenes = load_script("money", "ep01")["scenes"]
     srt = assemble.build_srt(scenes)
     assert srt.startswith("1\n00:00:00,000 --> 00:00:03,000\n")
     assert "12\n00:00:27,000 --> 00:00:30,000\n" in srt
     assert timeline(scenes)[-1][1] == pytest.approx(30.0)
+
+
+def test_cuts_land_on_the_beat():
+    """100BPM 에서 모든 컷(장면 경계)이 박자 위에 있어야 한다."""
+    for ch, ep in ALL:
+        for t0, _ in timeline(load_script(ch, ep)["scenes"]):
+            beats = t0 / audio.BEAT
+            assert abs(beats - round(beats)) < 1e-6, (ch, ep, t0)
+
+
+@pytest.mark.parametrize("style", sorted(audio.STYLES))
+def test_bgm_is_stereo_bounded_and_not_silent(style):
+    x = audio.render_bgm(style, 3, 6.0)
+    assert x.shape == (int(6.0 * audio.SR), 2)
+    assert np.isfinite(x).all() and np.abs(x).max() <= 1.0
+    assert np.sqrt((x ** 2).mean()) > 0.01
+
+
+def test_bgm_differs_per_episode():
+    c = load_channel("money")
+    a = audio.episode_seed(c, "ep01")
+    b = audio.episode_seed(c, "ep02")
+    assert a != b
+    assert not np.allclose(audio.render_bgm("lofi", a, 3.0), audio.render_bgm("lofi", b, 3.0))
+
+
+def test_sfx_events_match_scene_content():
+    scenes = load_script("shortcut", "ep01")["scenes"]
+    ev = audio.sfx_events(scenes)
+    names = [n for _, n, _ in ev]
+    assert names[0] == "impact"
+    assert names.count("whoosh") == len(scenes) - 1
+    n_keys = sum(len(s.get("keys", [])) for s in scenes)
+    assert names.count("key") == n_keys
+    assert names.count("stamp") == 1
+    assert all(0 <= t < 30 for t, _, _ in ev)
 
 
 def test_review_grades_against_thresholds():
@@ -78,10 +159,31 @@ def test_review_handles_zero_views():
     assert all(v is None or v == 0 for _, v, _, _ in review.grade(row))
 
 
-def test_post_caption_rules():
-    md = post.build(load_script("ep01"), "12", ["연말정산", "직장인", "카드공제", "체크카드"])
+def test_post_uses_channel_hashtag():
+    md = post.build(load_channel("shortcut"), load_script("shortcut", "ep01"), "○", ["엑셀", "직장인", "빠른채우기", "CtrlE"])
     lines = md.splitlines()
     i = lines.index("## 캡션")
-    assert lines[i + 1] == "연봉의 25% 이 숫자 모르면 카드 공제 0원"
-    assert lines[i + 2] == "저장해두고 12월에 다시 보기"
-    assert "#연말정산 #직장인 #카드공제 #체크카드 #월급사용설명서" in md
+    assert lines[i + 1] == "300줄 복붙 3초면 끝 Ctrl + E"
+    assert "#엑셀 #직장인 #빠른채우기 #CtrlE #칼퇴단축키" in md
+    assert "칼퇴 단축키" in lines[0]
+
+
+def test_hook_rules_ban_controversy_for_curiosity_channel():
+    rules = load_channel("why")["hook_rules"]
+    banned = " ".join(rules["banned"])
+    for word in ("정치", "종교", "건강 공포", "낚시"):
+        assert word in banned
+
+
+def test_bright_signal_has_readable_text_color():
+    """노랑처럼 밝은 신호색은 종이 위 글자용 색(signal_text)이 따로 있어야 한다."""
+    def lum(h):
+        r, g, b = (int(h[i:i + 2], 16) / 255 for i in (1, 3, 5))
+        f = lambda c: c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+    for ch in list_channels():
+        c = load_channel(ch)["colors"]
+        text = c.get("signal_text", c["signal"])
+        ratio = (lum(c["paper"]) + 0.05) / (lum(text) + 0.05)
+        # 최소선 2.5:1 (노랑 1.4:1 처럼 안 읽히는 색을 막는 용도). 권장은 큰 글자 기준 3:1
+        assert ratio >= 2.5, (ch, round(ratio, 2))

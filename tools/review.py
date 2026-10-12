@@ -1,7 +1,7 @@
 """업로드 48시간 뒤 수치(metrics.csv)로 편마다 통과·미달을 매긴다.
 
-    python -m tools.review            # 전체
-    python -m tools.review ep01       # 한 편
+    python -m tools.review money          # 한 채널
+    python -m tools.review money ep01     # 한 편
 
 기준은 시작용 가설이다. 4주 뒤엔 내 채널 중앙값으로 THRESHOLDS 를 바꾼다.
 """
@@ -13,9 +13,8 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-from tools.common import ROOT, TOTAL_SEC
+from tools.common import TOTAL_SEC, channel_dir
 
-METRICS = ROOT / "metrics.csv"
 COLUMNS = ["ep", "platform", "posted_at", "views", "viewed_3s", "avg_watch_sec",
            "saves", "shares", "profile_visits", "follows"]
 
@@ -29,7 +28,7 @@ THRESHOLDS = [
 ]
 
 
-def read_rows(path: Path = METRICS) -> list[dict]:
+def read_rows(path: Path) -> list[dict]:
     if not path.exists():
         return []
     with open(path, encoding="utf-8", newline="") as f:
@@ -77,9 +76,10 @@ def report(rows: list[dict]) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("channel")
     ap.add_argument("ep", nargs="?")
     a = ap.parse_args(argv)
-    rows = [r for r in read_rows() if not a.ep or r["ep"] == a.ep]
+    rows = [r for r in read_rows(channel_dir(a.channel) / "metrics.csv") if not a.ep or r["ep"] == a.ep]
     if not rows:
         print("metrics.csv 에 해당 편 수치가 없습니다. 인사이트 수치를 먼저 입력하세요.")
         return 1

@@ -1,20 +1,20 @@
 """다음 번호의 에피소드 폴더와 12장면 빈 대본(script.json)을 만든다.
 
-    python -m tools.new_episode "연말정산 미리보기 쓰는 법" --series "시즌 · 연말정산" --slug preview
+    python -m tools.new_episode money "연말정산 미리보기 쓰는 법" --series "시즌 · 연말정산" --slug preview
 """
 from __future__ import annotations
 
 import argparse
 import sys
 
-from tools.common import DEFAULT_DUR, EDGE_DUR, EPISODES, save_json
+from tools.common import DEFAULT_DUR, EDGE_DUR, channel_dir, save_json
 
 # 3초 후킹 → 정보 3개(장면 9개) → 지금 할 일 → CTA
 SKELETON = (["hook"] + ["point", "point", "number"] * 3 + ["check", "cta"])[:12]
 
 
-def next_number() -> int:
-    nums = [int(p.name[2:4]) for p in EPISODES.glob("ep[0-9][0-9]*") if p.name[2:4].isdigit()]
+def next_number(ch: str) -> int:
+    nums = [int(p.name[2:4]) for p in (channel_dir(ch) / "episodes").glob("ep[0-9][0-9]*") if p.name[2:4].isdigit()]
     return max(nums, default=0) + 1
 
 
@@ -38,14 +38,15 @@ def template(ep_id: str, series: str, title: str) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("channel")
     ap.add_argument("title")
     ap.add_argument("--series", required=True, help="예: '시즌 · 연말정산', '상시 · 통장 관리'")
     ap.add_argument("--slug", required=True, help="영문 짧은 이름 (예: irp)")
     a = ap.parse_args(argv)
-    n = next_number()
-    d = EPISODES / f"ep{n:02d}"
+    n = next_number(a.channel)
+    d = channel_dir(a.channel) / "episodes" / f"ep{n:02d}"
     save_json(d / "script.json", template(f"ep{n:02d}_{a.slug}", a.series, a.title))
-    print(f"episodes/{d.name}/script.json 생성 — TODO 를 채우세요")
+    print(f"channels/{a.channel}/episodes/{d.name}/script.json 생성 — TODO 를 채우세요")
     return 0
 
 

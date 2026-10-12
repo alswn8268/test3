@@ -1,7 +1,7 @@
 """대본에서 숫자가 들어간 문구를 뽑아 사실 확인 표(factcheck.md)를 만들고 검사한다.
 
-    python -m tools.factcheck ep01           # 표 만들기/갱신 (이미 적은 출처·확인 표시는 보존)
-    python -m tools.factcheck ep01 --check   # 모든 숫자에 출처 URL + ✅ 가 있는지 검사
+    python -m tools.factcheck money ep01           # 표 만들기/갱신 (이미 적은 출처·확인 표시는 보존)
+    python -m tools.factcheck money ep01 --check   # 모든 숫자에 출처 URL + ✅ 가 있는지 검사
 
 규칙: 출처 링크가 없는 숫자는 영상에 넣지 않는다. --check 가 실패하면 렌더하지 않는다.
 """
@@ -11,7 +11,7 @@ import argparse
 import re
 import sys
 
-from tools.common import episode_dir, load_script, plain, scene_texts
+from tools.common import episode_dir, load_channel, load_script, plain, scene_texts
 
 HEADER = [
     "# 사실 확인 — {id} {title}",
@@ -26,12 +26,22 @@ _NUMBERING = re.compile(r"^\d{2}\s")  # '01  문턱' 같은 장면 번호 라벨
 _ROW = re.compile(r"^\|\s*\d+\s*\|\s*(\d+)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*$")
 
 
-def claims(data: dict) -> list[tuple[int, str]]:
+def claims(data: dict, scope: str = "numbers") -> list[tuple[int, str]]:
+    """확인할 문구 목록.
+    scope="numbers"     숫자가 든 문구 + 단축키 (금융·단축키 채널)
+    scope="every_scene" 후킹·CTA 를 뺀 모든 장면의 화면 문구 한 줄씩 (맞춤법처럼 '규칙'이 사실인 채널)
+    """
     out: list[tuple[int, str]] = []
     for i, s in enumerate(data["scenes"], 1):
+        if scope == "every_scene":
+            if s["type"] not in ("hook", "cta"):
+                t = " / ".join(plain(x).strip() for x in scene_texts(s) if not _NUMBERING.match(plain(x)))
+                out.append((i, t.replace("|", "/")))
+            continue
         for text in scene_texts(s):
-            t = plain(text).strip()
-            if re.search(r"\d", t) and not _NUMBERING.match(t) and (i, t) not in out:
+            t = plain(text).strip().replace("|", "/")
+            is_keys = bool(s.get("keys")) and t == " + ".join(s["keys"])
+            if (is_keys or re.search(r"\d", t)) and not _NUMBERING.match(t) and (i, t) not in out:
                 out.append((i, t))
     return out
 
@@ -45,10 +55,10 @@ def parse_rows(md: str) -> dict[tuple[int, str], tuple[str, str]]:
     return rows
 
 
-def build(data: dict, existing: str = "") -> str:
+def build(data: dict, existing: str = "", scope: str = "numbers") -> str:
     old = parse_rows(existing)
     lines = [h.format(**data) for h in HEADER]
-    for n, (scene, text) in enumerate(claims(data), 1):
+    for n, (scene, text) in enumerate(claims(data, scope), 1):
         src, ok = old.get((scene, text), ("", "☐"))
         lines.append(f"| {n} | {scene:02d} | {text} | {src} | {ok} |")
     return "\n".join(lines) + "\n"
@@ -66,28 +76,30 @@ def problems(md: str) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("channel")
     ap.add_argument("ep")
     ap.add_argument("--check", action="store_true")
     a = ap.parse_args(argv)
-    data = load_script(a.ep)
-    path = episode_dir(a.ep) / "factcheck.md"
+    data = load_script(a.channel, a.ep)
+    scope = load_channel(a.channel).get("factcheck_scope", "numbers")
+    path = episode_dir(a.channel, a.ep) / "factcheck.md"
     existing = path.read_text(encoding="utf-8") if path.exists() else ""
 
     if a.check:
         if not existing:
-            print(f"{path.name} 이 없습니다. 먼저 `python -m tools.factcheck {a.ep}`")
+            print(f"{path.name} 이 없습니다. 먼저 `python -m tools.factcheck {a.channel} {a.ep}`")
             return 1
         # 대본이 바뀌어 표에 없는 숫자가 생겼는지도 본다
-        missing = [c for c in claims(data) if c not in parse_rows(existing)]
+        missing = [c for c in claims(data, scope) if c not in parse_rows(existing)]
         issues = [f"장면 {s:02d} \"{t}\": 표에 없음 (대본 수정 후 표를 다시 만드세요)" for s, t in missing]
         issues += problems(existing)
         for i in issues:
             print("  ✗", i)
-        print(f"[{a.ep}] 사실 확인 {'통과' if not issues else f'미완료 {len(issues)}건'}")
+        print(f"[{a.channel}/{a.ep}] 사실 확인 {'통과' if not issues else f'미완료 {len(issues)}건'}")
         return 1 if issues else 0
 
-    path.write_text(build(data, existing), encoding="utf-8")
-    print(f"{path.relative_to(path.parents[2])} — 숫자 문구 {len(claims(data))}개")
+    path.write_text(build(data, existing, scope), encoding="utf-8")
+    print(f"{path.relative_to(path.parents[4])} — 확인할 문구 {len(claims(data, scope))}개")
     return 0
 
 

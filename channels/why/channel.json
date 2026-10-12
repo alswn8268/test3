@@ -1,0 +1,90 @@
+{
+  "slug": "why",
+  "name": "그거 왜 그래?",
+  "concept": "매일 보는 것의 '왜?'를 30초 안에 — 반전 있는 과학·생활 상식. 논란 대신 호기심으로 멈추게",
+  "voice": "말 거는 듯한 단정형 + 반전 ('사실 ~입니다', '~한 셈이죠', '당신 탓이 아닙니다')",
+  "pillars": [
+    "내 몸",
+    "생활 속 물건",
+    "자연·우주",
+    "반전 분류",
+    "무해한 논쟁"
+  ],
+  "colors": {
+    "paper": "#E8EEF6",
+    "ink": "#12161F",
+    "signal": "#FFC21A",
+    "signal_text": "#9A6A00"
+  },
+  "props": {
+    "hero": "question",
+    "stack": "bulb",
+    "point": [
+      "question",
+      "bulb",
+      "receipt"
+    ]
+  },
+  "bgm": {
+    "style": "mystery",
+    "seed": 77
+  },
+  "hashtag": "#그거왜그래",
+  "broad_tags": [
+    "상식",
+    "과학",
+    "신기한사실",
+    "잡학"
+  ],
+  "factcheck": "required",
+  "factcheck_scope": "every_scene",
+  "official_sources": [
+    "https://science.nasa.gov",
+    "https://www.britannica.com",
+    "https://www.nibr.go.kr",
+    "https://www.kari.re.kr"
+  ],
+  "hook_rules": {
+    "allowed": [
+      "당신 (2인칭: '지금 당신의 ~')",
+      "반전 ('사실 ~가 아닙니다')",
+      "무해한 논쟁 ('댓글로 답해 주세요')",
+      "만약 ('~하면 생기는 일')",
+      "무죄 ('~는 당신 탓이 아닙니다')"
+    ],
+    "banned": [
+      "정치·종교·성별·지역·세대 갈등",
+      "건강 공포 조장·의학적 조언",
+      "실존 인물·기업 비방",
+      "제목에서 약속한 답을 영상에서 안 주는 낚시",
+      "확인 안 된 '충격 사실'"
+    ]
+  },
+  "accounts": {
+    "instagram": "",
+    "tiktok": "",
+    "youtube": ""
+  },
+  "schedule": [
+    {
+      "day": "월",
+      "time": "20:40"
+    },
+    {
+      "day": "수",
+      "time": "21:40"
+    },
+    {
+      "day": "금",
+      "time": "21:10"
+    },
+    {
+      "day": "토",
+      "time": "13:20"
+    },
+    {
+      "day": "일",
+      "time": "21:50"
+    }
+  ]
+}

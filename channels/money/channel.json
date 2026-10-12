@@ -1,0 +1,72 @@
+{
+  "slug": "money",
+  "name": "월급 사용설명서",
+  "concept": "20~30대 직장인의 월급 지키기 — 세금·카드·통장·월세·청년 혜택",
+  "voice": "친구에게 알려주듯 짧은 존댓말 (~예요, ~하세요)",
+  "pillars": [
+    "카드 쓰는 법",
+    "통장 관리",
+    "연금·저축",
+    "월세·자취 돈",
+    "청년 혜택"
+  ],
+  "colors": {
+    "paper": "#EFE9DD",
+    "ink": "#16130F",
+    "signal": "#FF4B1F"
+  },
+  "props": {
+    "hero": "card",
+    "stack": "coin",
+    "point": [
+      "card",
+      "coin",
+      "receipt"
+    ]
+  },
+  "bgm": {
+    "style": "lofi",
+    "seed": 7
+  },
+  "hashtag": "#월급사용설명서",
+  "broad_tags": [
+    "직장인",
+    "재테크",
+    "연말정산",
+    "사회초년생"
+  ],
+  "factcheck": "required",
+  "official_sources": [
+    "https://www.nts.go.kr",
+    "https://www.hometax.go.kr",
+    "https://www.law.go.kr",
+    "https://www.gohometax.go.kr"
+  ],
+  "accounts": {
+    "instagram": "",
+    "tiktok": "",
+    "youtube": ""
+  },
+  "schedule": [
+    {
+      "day": "월",
+      "time": "12:10"
+    },
+    {
+      "day": "화",
+      "time": "21:20"
+    },
+    {
+      "day": "수",
+      "time": "07:50"
+    },
+    {
+      "day": "목",
+      "time": "21:20"
+    },
+    {
+      "day": "토",
+      "time": "10:30"
+    }
+  ]
+}

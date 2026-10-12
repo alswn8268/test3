@@ -1,0 +1,70 @@
+{
+  "slug": "shortcut",
+  "name": "칼퇴 단축키",
+  "concept": "엑셀·윈도우·업무 단축키 하나로 10분 아끼기 — 매 편 단축키 1개와 바로 써먹는 예시",
+  "voice": "옆자리 선배가 알려주듯 빠르고 짧게 (~하면 끝, ~누르세요)",
+  "pillars": [
+    "엑셀",
+    "윈도우",
+    "파워포인트·워드",
+    "메일·메신저",
+    "크롬 브라우저"
+  ],
+  "colors": {
+    "paper": "#ECEFE6",
+    "ink": "#141613",
+    "signal": "#00A86B"
+  },
+  "props": {
+    "hero": "keycap",
+    "stack": "keycap",
+    "point": [
+      "keycap",
+      "receipt",
+      "keycap"
+    ]
+  },
+  "bgm": {
+    "style": "upbeat",
+    "seed": 21
+  },
+  "hashtag": "#칼퇴단축키",
+  "broad_tags": [
+    "엑셀",
+    "직장인",
+    "업무꿀팁",
+    "단축키"
+  ],
+  "factcheck": "required",
+  "official_sources": [
+    "https://support.microsoft.com"
+  ],
+  "accounts": {
+    "instagram": "",
+    "tiktok": "",
+    "youtube": ""
+  },
+  "schedule": [
+    {
+      "day": "월",
+      "time": "08:10"
+    },
+    {
+      "day": "화",
+      "time": "12:20"
+    },
+    {
+      "day": "수",
+      "time": "18:40"
+    },
+    {
+      "day": "목",
+      "time": "12:20"
+    },
+    {
+      "day": "금",
+      "time": "17:50"
+    }
+  ],
+  "factcheck_scope": "every_scene"
+}

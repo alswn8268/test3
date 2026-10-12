@@ -1,0 +1,71 @@
+{
+  "slug": "spelling",
+  "name": "한 끗 맞춤법",
+  "concept": "보고서·카톡에서 자주 틀리는 맞춤법을 3초 구별법으로 — 매 편 헷갈리는 짝 하나",
+  "voice": "퀴즈 내듯 가볍게, 정답은 확실하게 (~가 맞아요, ~로 기억하세요)",
+  "pillars": [
+    "헷갈리는 짝",
+    "회사 용어",
+    "띄어쓰기",
+    "카톡 맞춤법",
+    "외래어 표기"
+  ],
+  "colors": {
+    "paper": "#ECEDF2",
+    "ink": "#14151A",
+    "signal": "#2E7DFF"
+  },
+  "props": {
+    "hero": "pencil",
+    "stack": "keycap",
+    "point": [
+      "pencil",
+      "receipt",
+      "keycap"
+    ]
+  },
+  "bgm": {
+    "style": "bright",
+    "seed": 42
+  },
+  "hashtag": "#한끗맞춤법",
+  "broad_tags": [
+    "맞춤법",
+    "직장인",
+    "국어",
+    "글쓰기"
+  ],
+  "factcheck": "required",
+  "official_sources": [
+    "https://korean.go.kr",
+    "https://stdict.korean.go.kr"
+  ],
+  "accounts": {
+    "instagram": "",
+    "tiktok": "",
+    "youtube": ""
+  },
+  "schedule": [
+    {
+      "day": "월",
+      "time": "21:00"
+    },
+    {
+      "day": "화",
+      "time": "07:40"
+    },
+    {
+      "day": "수",
+      "time": "12:30"
+    },
+    {
+      "day": "목",
+      "time": "07:40"
+    },
+    {
+      "day": "일",
+      "time": "20:30"
+    }
+  ],
+  "factcheck_scope": "every_scene"
+}

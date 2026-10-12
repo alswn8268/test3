@@ -4,8 +4,12 @@ __pycache__/
 .pytest_cache/
 
 # 렌더 결과물 (언제든 다시 만들 수 있고 용량이 큼)
-episodes/*/clips/
-episodes/*/preview/
-episodes/*/final.mp4
-episodes/*/*.fcproj
+channels/*/episodes/*/clips/
+channels/*/episodes/*/preview/
+channels/*/episodes/*/final.mp4
+channels/*/episodes/*/audio.wav
+channels/*/episodes/*/*.fcproj
 out/
+
+# 참고 영상 (분석용으로만, 저장소에 올리지 않음)
+refs/

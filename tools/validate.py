@@ -1,7 +1,8 @@
 """script.json 이 CLAUDE.md 의 대본·디자인 규칙을 지키는지 검사한다.
 
-    python -m tools.validate ep01          # 한 편
-    python -m tools.validate --all         # 전체
+    python -m tools.validate money ep01    # 한 편
+    python -m tools.validate money         # 한 채널 전체
+    python -m tools.validate --all         # 모든 채널
 
 오류(ERROR)가 하나라도 있으면 종료코드 1 → 렌더 전에 반드시 고친다.
 경고(WARN)는 화면이 넘칠 수 있다는 신호라 미리보기 PNG로 눈으로 확인한다.
@@ -11,7 +12,16 @@ from __future__ import annotations
 import argparse
 import sys
 
-from tools.common import EDGE_DUR, EPISODES, SCENE_COUNT, SCENE_TYPES, TOTAL_SEC, load_script, plain
+from tools.common import (
+    EDGE_DUR,
+    SCENE_COUNT,
+    SCENE_TYPES,
+    TOTAL_SEC,
+    list_channels,
+    list_episodes,
+    load_script,
+    plain,
+)
 
 MAX_LINE_CHARS = 9  # 제목 자막 한 줄 최대 글자 수 (공백 제외)
 
@@ -22,6 +32,7 @@ REQUIRED = {
     "number": ("big", "pre", "sub"),
     "compare": ("left", "right"),
     "check": ("label", "items"),
+    "keys": ("lines", "keys"),
 }
 
 
@@ -62,7 +73,8 @@ def check(data: dict) -> tuple[list[str], list[str]]:
             if n > MAX_LINE_CHARS:
                 warns.append(f"{tag}: 한 줄 {n}글자 > {MAX_LINE_CHARS} → 화면 넘침 확인: \"{plain(line)}\"")
 
-        visible = " ".join(s.get("lines", []) + [s.get("sub", ""), s.get("pre", "")] + s.get("items", []))
+        visible = " ".join(s.get("lines", []) + s.get("title", []) + [s.get("sub", ""), s.get("pre", "")]
+                           + s.get("items", []))
         n_hl = visible.count("[")
         if n_hl > 1:
             warns.append(f"{tag}: 형광펜 강조 {n_hl}개 (규칙: 장면당 1개)")
@@ -73,18 +85,22 @@ def check(data: dict) -> tuple[list[str], list[str]]:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("eps", nargs="*", help="ep01 ep02 …")
-    ap.add_argument("--all", action="store_true")
+    ap.add_argument("channel", nargs="?", help="채널 (money, shortcut, …)")
+    ap.add_argument("eps", nargs="*", help="ep01 ep02 … (없으면 채널 전체)")
+    ap.add_argument("--all", action="store_true", help="모든 채널 전체")
     a = ap.parse_args(argv)
-    eps = sorted(p.name for p in EPISODES.glob("ep*") if (p / "script.json").exists()) if a.all else a.eps
-    if not eps:
-        ap.error("편 번호를 주거나 --all 을 쓰세요")
+    if a.all:
+        targets = [(ch, ep) for ch in list_channels() for ep in list_episodes(ch)]
+    elif a.channel:
+        targets = [(a.channel, ep) for ep in (a.eps or list_episodes(a.channel))]
+    else:
+        ap.error("채널을 주거나 --all 을 쓰세요")
 
     failed = 0
-    for ep in eps:
-        errors, warns = check(load_script(ep))
+    for ch, ep in targets:
+        errors, warns = check(load_script(ch, ep))
         status = "통과" if not errors else "실패"
-        print(f"[{ep}] {status} — 오류 {len(errors)} · 경고 {len(warns)}")
+        print(f"[{ch}/{ep}] {status} — 오류 {len(errors)} · 경고 {len(warns)}")
         for e in errors:
             print(f"  ERROR {e}")
         for w in warns:

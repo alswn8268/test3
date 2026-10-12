@@ -1,16 +1,16 @@
 ---
 name: assemble
-description: 장면 클립을 이어 붙이고 배경음·자막(SRT)을 붙여 final.mp4 를 만든다. FilmCraft MCP 우선, 실패하면 ffmpeg 대체 경로.
+description: 장면 클립을 이어 붙이고 자체 합성 BGM·효과음·자막(SRT)을 넣어 final.mp4 를 만든다. 인자는 채널 + 편.
 ---
 
-# /assemble — 조립·사운드
+# /assemble <채널> <편> — 조립·사운드
 
-1. `episodes/<ep>/clips/s01~s12.mp4` 가 모두 있는지 확인. 없으면 `/render <ep>` 안내.
-2. **기본 경로 — FilmCraft MCP** (`.mcp.json` 의 `filmcraft` 서버가 연결돼 있을 때):
-   클립 12개를 순서대로 타임라인에 올리고, 컷 전환은 하드컷, 배경음은 `assets/bgm/` 의 직접 만든 음원만,
-   자막은 `captions.srt`, 1080×1920 30fps H.264 로 `episodes/<ep>/final.mp4` 내보내기. 프로젝트 파일은
-   `episodes/<ep>/<ep>.fcproj` 로 저장해 사람이 손볼 수 있게 한다.
-3. **대체 경로 — ffmpeg** (FilmCraft 가 없거나 실패):
-   `python -m tools.assemble <ep> [--bgm assets/bgm/<파일>]` → `final.mp4` + `captions.srt`.
-4. 결과 확인: `ffprobe` 로 길이 30초·1080×1920·30fps 인지 확인하고, 사람에게 '최종 1회 시청'을 요청한다.
-5. 인기 사운드는 넣지 않는다 (업로드할 때 앱에서 얹기). 다음은 `/post <ep>`.
+1. `channels/<채널>/episodes/<편>/clips/s01~s12.mp4` 확인. 없으면 `/render`.
+2. 기본: `python -m tools.assemble <채널> <편>`
+   - `channel.json` 의 bgm 스타일로 배경음을 **직접 합성** (100BPM, 컷이 박자에 맞음, 편마다 멜로디 다름)
+   - 컷 휙 · 강조 팝 · 체크 틱 · 키 딸깍 · 숫자 딩 · 도장 쿵 효과음을 화면 애니메이션 시점에 맞춰 넣음
+   - 음량 약 -14 LUFS 로 맞추고 `final.mp4` + `captions.srt` 생성
+3. 외부 무료 음원을 쓰고 싶다면: `assets/bgm/LICENSES.md` 에 출처·라이선스를 먼저 적은 뒤 `--bgm assets/bgm/<파일>`.
+   라이선스 기록이 없으면 쓰지 않는다. 인기 사운드는 넣지 않는다(앱에서 얹기). 무음본이 필요하면 `--silent`.
+4. FilmCraft MCP 가 연결돼 있으면 손으로 다듬을 프로젝트 파일을 만들 때만 쓴다 (기본 경로는 위 명령).
+5. 확인: `ffprobe` 로 30초·1080×1920·30fps, 사람에게 '최종 1회 시청' 요청. 다음은 `/post <채널> <편>`.
