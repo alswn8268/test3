@@ -11,7 +11,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from tools.common import episode_dir, load_channel, load_script, plain
+from tools.common import COUPANG_NOTICE, episode_dir, load_channel, load_script, plain, sponsor_label
 
 
 def hook_sentence(data: dict) -> str:
@@ -23,8 +23,18 @@ def build(channel: dict, data: dict, month: str, tags: list[str]) -> str:
     tags += ["#TODO"] * (4 - len(tags))
     all_tags = " ".join(tags + [channel["hashtag"]])
     hook = hook_sentence(data)
+    lab = sponsor_label(data)
+    sp = data.get("sponsor") or {}
+    if lab:  # 첫 줄 맨 앞에 [광고]/[협찬] — 더보기를 누르지 않아도 보이게
+        hook = f"{lab[1]} {hook}"
+    notice = []
+    if lab:
+        notice.append(f"{lab[0]}: {sp.get('brand', '')}")
+        if sp.get("link_type") == "coupang":
+            notice.append(COUPANG_NOTICE)
     save = f"저장해두고 {month}월에 다시 보기" if month != "○" else "저장해두고 다시 보기"
-    acc = channel["accounts"]
+    handle = channel.get("identity", {}).get("handle")
+    acc = {p: (channel["accounts"].get(p) or (f"@{handle} (개설 예정)" if handle else "")) for p in ("tiktok", "youtube", "instagram")}
     times = " · ".join(f"{x['day']} {x['time']}" for x in channel.get("schedule", []))
     return "\n".join([
         f"# 업로드 문구 — {channel['name']} · {data['id']} {data['title']}",
@@ -34,16 +44,21 @@ def build(channel: dict, data: dict, month: str, tags: list[str]) -> str:
         "- 커버: `preview/s01.png` (후킹 장면) · 자막 파일: `captions.srt` (유튜브에 올리면 검색에 도움)",
         "- 인기 사운드를 얹을 땐 앱에서 볼륨 10~20%로 (영상 속 배경음이 이미 있음)",
         f"- 이 채널 업로드 시간: {times}",
+        *([(f"- **{lab[0]} 편** — 자동 업로드에서 빠짐. 직접 올리며 플랫폼 광고 표시 켜기: "
+            "유튜브 '유료 프로모션 포함' 체크 · 틱톡 '콘텐츠 공개(브랜드 콘텐츠)' 켜기 · 인스타 '유료 파트너십' 라벨"),
+           "- 상품 링크: 쇼츠·릴스 설명란 링크는 눌리지 않으니 프로필 링크 / 유튜브 쇼핑 상품 태그로"] if lab else []),
         "",
         f"## 틱톡 — {acc.get('tiktok') or '(계정 미정)'}",
         hook,
         save,
+        *notice,
         all_tags,
         "",
         f"## 유튜브 쇼츠 — {acc.get('youtube') or '(계정 미정)'}",
-        f"제목: {data['title']}",
+        f"제목: {(lab[1] + ' ') if lab else ''}{data['title']}",
         "설명:",
         hook,
+        *notice,
         "(본문 1~2줄: 영상 핵심 + 지금 할 일)",
         " ".join(tags[:2] + [channel["hashtag"]]),
         "",
@@ -52,6 +67,7 @@ def build(channel: dict, data: dict, month: str, tags: list[str]) -> str:
         save,
         "",
         "(본문 2~3줄: 영상 핵심 + 지금 할 일 1개)",
+        *notice,
         "",
         all_tags,
         "",

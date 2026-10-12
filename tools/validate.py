@@ -16,9 +16,11 @@ from tools.common import (
     EDGE_DUR,
     SCENE_COUNT,
     SCENE_TYPES,
+    SPONSOR_KINDS,
     TOTAL_SEC,
     list_channels,
     list_episodes,
+    load_channel,
     load_script,
     plain,
 )
@@ -36,13 +38,24 @@ REQUIRED = {
 }
 
 
-def check(data: dict) -> tuple[list[str], list[str]]:
+def check(data: dict, channel: dict | None = None) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warns: list[str] = []
     scenes = data.get("scenes", [])
     for key in ("id", "series", "title"):
         if not data.get(key):
             errors.append(f"'{key}' 가 비어 있음")
+
+    sp = data.get("sponsor")
+    if sp:
+        if sp.get("kind") not in SPONSOR_KINDS:
+            errors.append(f"sponsor.kind 는 {', '.join(SPONSOR_KINDS)} 중 하나")
+        for key in ("brand", "category"):
+            if not sp.get(key):
+                errors.append(f"sponsor.{key} 가 비어 있음")
+        banned = (channel or {}).get("monetization", {}).get("banned", [])
+        if any(b in sp.get("category", "") or sp.get("category", "") in b for b in banned if sp.get("category")):
+            errors.append(f"이 채널에서 금지된 협찬 분야: {sp['category']} (channel.json monetization.banned)")
 
     if len(scenes) != SCENE_COUNT:
         errors.append(f"장면 수 {len(scenes)}개 (규칙: {SCENE_COUNT}개)")
@@ -98,7 +111,7 @@ def main(argv: list[str] | None = None) -> int:
 
     failed = 0
     for ch, ep in targets:
-        errors, warns = check(load_script(ch, ep))
+        errors, warns = check(load_script(ch, ep), load_channel(ch))
         status = "통과" if not errors else "실패"
         print(f"[{ch}/{ep}] {status} — 오류 {len(errors)} · 경고 {len(warns)}")
         for e in errors:

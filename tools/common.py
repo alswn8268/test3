@@ -21,6 +21,19 @@ SCENE_TYPES = {"hook", "point", "number", "compare", "check", "keys", "cta"}
 
 _MARK = re.compile(r"[\[\]{}]")
 
+# 협찬·광고 표시 (공정위 '추천·보증 심사지침': 경제적 이해관계를 소비자가 쉽게 알 수 있게, 내용과 가까운 곳에)
+SPONSOR_KINDS = {
+    "paid": ("유료 광고 포함", "[광고]"),            # 돈을 받고 만든 영상
+    "gifted": ("협찬 · 제품 제공", "[협찬]"),        # 제품·서비스를 무료로 받음
+    "affiliate": ("제휴 링크 · 수수료 받음", "[광고]"),  # 구매 시 수수료 (쿠팡 파트너스, 유튜브 쇼핑 제휴 등)
+}
+COUPANG_NOTICE = "이 게시물은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+
+
+def sponsor_label(data: dict) -> tuple[str, str] | None:
+    sp = data.get("sponsor")
+    return SPONSOR_KINDS.get(sp["kind"]) if sp else None
+
 
 def list_channels() -> list[str]:
     return sorted(p.name for p in CHANNELS.iterdir() if (p / "channel.json").exists())

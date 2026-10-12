@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>프로필 이미지</title>
+<link rel="stylesheet" href="vendor/noto-serif-kr/900.css">
+<style>
+  @font-face { font-family:"Pre"; src:url(../assets/fonts/Pretendard-Black.otf); font-weight:900; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:1080px; height:1080px; overflow:hidden; }
+  body { display:flex; align-items:center; justify-content:center; font-family:"Pre"; }
+  /* 프로필은 원형으로 잘리므로 가운데 760px 안에 모두 넣는다 */
+  .ledger { background:#EFE9DD; }
+  .ledger .mark { font-size:330px; font-weight:900; letter-spacing:-18px; line-height:.95; color:#16130F; text-align:left; }
+  .ledger .mark span { position:relative; z-index:0; }
+  .ledger .mark span::before { content:""; position:absolute; left:-12px; right:-12px; bottom:6%; height:44%; background:#FF4B1F; z-index:-1; }
+  .sheet { background:#ECEFE6;
+    background-image:linear-gradient(#0001 2px, transparent 2px), linear-gradient(90deg, #0001 2px, transparent 2px); background-size:180px 90px; }
+  .sheet .key { font-size:240px; font-weight:900; letter-spacing:-10px; color:#141613; background:#00A86B; padding:60px 70px 40px;
+    border:16px solid #141613; border-bottom-width:56px; border-radius:60px; }
+  .notebook { background:#24423A; }
+  .notebook .mark { font-family:"Noto Serif KR", serif; font-weight:900; font-size:520px; color:#ECEDF2; line-height:1; position:relative; }
+  .notebook .mark::after { content:""; position:absolute; left:-30px; right:-30px; bottom:-30px; height:46px; border-radius:24px; background:#2E7DFF; transform:rotate(-3deg); }
+  .lab { background:linear-gradient(#8DB6FF, #4F86F7 60%, #3A6CDB); }
+  .lab .mark { font-size:640px; font-weight:900; color:#FFC21A; -webkit-text-stroke:44px #0E1A3D; paint-order:stroke fill; line-height:1; transform:rotate(-6deg); }
+</style></head>
+<body>
+<div id="m"></div>
+<script>
+  const ch = new URLSearchParams(location.search).get('ch');
+  const MARK = { money: ['ledger', '<div class="mark">월<span>급</span></div>'],
+                 shortcut: ['sheet', '<div class="key">칼퇴</div>'],
+                 spelling: ['notebook', '<div class="mark">끗</div>'],
+                 why: ['lab', '<div class="mark">?</div>'] };
+  const [cls, html] = MARK[ch] || MARK.money;
+  document.body.className = cls; document.getElementById('m').outerHTML = html;
+  document.fonts.ready.then(() => document.fonts.load('900 100px "Noto Serif KR"', '끗')).then(() => { window.ready = true; });
+</script>
+</body></html>

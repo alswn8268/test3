@@ -74,7 +74,8 @@ def next_episode(ch: str) -> str | None:
     """승인됐고 아직 모든 플랫폼에 올라가지 않은 가장 앞 번호 편."""
     conf, log = publish_conf(load_channel(ch)), read_log(ch)
     for ep in list_episodes(ch):
-        if load_script(ch, ep).get("status") != "approved":
+        data = load_script(ch, ep)
+        if data.get("status") != "approved" or data.get("sponsor"):
             continue
         if set(conf["platforms"]) - done_platforms(log, ep):
             return ep
@@ -231,6 +232,8 @@ def check_ready(ch: str, ep: str) -> list[str]:
     data = load_script(ch, ep)
     if data.get("status") != "approved":
         problems.append("승인 안 됨 → `python -m tools.approve` (사람이 최종본을 본 뒤)")
+    if data.get("sponsor"):
+        problems.append("협찬·광고 편 → 플랫폼 광고 표시(유료 프로모션·브랜드 콘텐츠·유료 파트너십)를 직접 켜야 해서 자동 업로드 제외")
     if not (episode_dir(ch, ep) / "final.mp4").exists():
         problems.append("final.mp4 없음 → 렌더·조립 먼저")
     return problems

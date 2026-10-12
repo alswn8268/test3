@@ -36,6 +36,18 @@ Claude Code 슬래시 명령으로 돌아가요. 사람이 꼭 판단하는 곳�
 
 정치·종교·성별·세대 갈등, 건강 공포, 실존 인물 비방, 약속한 답을 안 주는 낚시는 금지예요.
 
+### 계정 이름 · 아이디 · 프로필
+
+| 채널 | 아이디 (틱톡·유튜브·인스타 공통) | 프로필 사진 |
+|---|---|---|
+| 월급 사용설명서 | `@wolgeup.manual` | `assets/profiles/money.png` |
+| 칼퇴 단축키 | `@kaltoe.key` | `assets/profiles/shortcut.png` |
+| 한 끗 맞춤법 | `@hankkeut.spell` | `assets/profiles/spelling.png` |
+| 그거 왜 그래? | `@geugeo.wae` | `assets/profiles/why.png` |
+
+예비 아이디·소개 문구·이렇게 지은 이유, **한 사람이 여러 계정을 운영해도 되는지(플랫폼 정책)**, **협찬 받기 좋은 주제와 광고 표시 규칙**은
+[`research/accounts-and-sponsorship.md`](research/accounts-and-sponsorship.md)에 정리했어요. 프로필 사진은 `node render/profile.mjs` 로 다시 만들 수 있어요.
+
 ### 채널마다 화면이 완전히 달라요
 
 색만 바꾼 게 아니라 **배경 · 글꼴 · 강조 방식 · 글자 등장 · 3D 배치 · 전환음**이 채널마다 달라요.

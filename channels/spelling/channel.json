@@ -79,5 +79,32 @@
     ],
     "tiktok_mode": "inbox",
     "privacy": "public"
+  },
+  "identity": {
+    "display_name": "한 끗 맞춤법",
+    "handle": "hankkeut.spell",
+    "handle_backups": [
+      "hankkeut_spell",
+      "spell.hankkeut"
+    ],
+    "bio": "보고서·카톡에서 틀리면 티 나는 맞춤법 ✍️\n3초 구별법으로 한 끗 차이 잡기"
+  },
+  "monetization": {
+    "programs": [
+      "유튜브 쇼핑 제휴 프로그램(상품 태그)",
+      "쿠팡 파트너스(프로필 링크)",
+      "브랜드 협찬(제품 제공·유료 광고)"
+    ],
+    "fit": [
+      "글쓰기·맞춤법 책",
+      "필기구·노트·다이어리",
+      "이력서·글쓰기 첨삭 서비스",
+      "전자책 리더"
+    ],
+    "banned": [
+      "대필",
+      "과제 대행"
+    ],
+    "note": "퀴즈형이라 제품 노출은 CTA 직전 한 장면으로 짧게."
   }
 }

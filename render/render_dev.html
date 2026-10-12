@@ -38,6 +38,11 @@
   #series { position:absolute; left:90px; top:300px; z-index:2; font-weight:700; font-size:28px;
             padding:8px 16px; border:3px solid currentColor; border-radius:999px; opacity:.75; }
 
+  /* 협찬·광고 표시: 영상 처음부터 끝까지 보이게 (공정위 심사지침 — 쉽게 알아볼 수 있는 위치·크기) */
+  #adtag { position:absolute; right:150px; top:300px; z-index:4; display:none; font-weight:800; font-size:30px;
+           padding:8px 18px; border-radius:10px; background:var(--ink); color:var(--paper); border:3px solid var(--paper); }
+  body.dark #adtag { background:var(--paper); color:var(--ink); border-color:var(--ink); }
+
   /* 본문 */
   #stage { position:absolute; left:90px; right:150px; top:470px; z-index:2; transform-origin: 0 0; }
   .label { font-weight:800; font-size:38px; color:var(--signal-text); letter-spacing:1px; margin-bottom:34px; }
@@ -159,6 +164,7 @@
 <div id="head"><div class="mark"><i></i><span id="wordmark"></span></div><div class="count" id="count">01 / 12</div></div>
 <div id="rule"></div>
 <div id="series"></div>
+<div id="adtag"></div>
 <div id="stage"></div>
 <div id="bar"></div><div id="barfill"></div>
 <canvas id="grain" width="1080" height="1920"></canvas>
@@ -184,6 +190,9 @@ const scenes = ep.scenes.map(s => ({ dur: 2.4, ...s }));
 let acc = 0; for (const s of scenes) { s.t0 = acc; acc += s.dur; }
 const TOTAL = acc;
 document.getElementById('series').textContent = ep.series;
+// tools/common.py 의 SPONSOR_KINDS 와 같은 문구
+const AD = { paid: '유료 광고 포함', gifted: '협찬 · 제품 제공', affiliate: '제휴 링크 · 수수료 받음' };
+if (ep.sponsor && AD[ep.sponsor.kind]) { const t = document.getElementById('adtag'); t.textContent = AD[ep.sponsor.kind]; t.style.display = 'block'; }
 
 // ---------- 종이 질감(그레인): 한 번만 그려 둔다 (SVG 필터는 매 프레임 다시 계산돼 느림) ----------
 {

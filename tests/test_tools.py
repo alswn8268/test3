@@ -271,3 +271,42 @@ def test_unapproved_episode_is_never_published(tmp_path, monkeypatch):
     assert approve_main(["why", "ep01", "--revoke"]) == 0
     assert publish.check_ready("why", "ep01")
     assert publish.next_episode("why") == "ep02"
+
+
+# ---------------------------------------------------------------- 협찬·광고
+def test_sponsored_episode_disclosure_everywhere():
+    from tools.common import COUPANG_NOTICE
+    data = load_script("shortcut", "ep06")
+    assert data["sponsor"]["kind"] == "affiliate"
+    md = post.build(load_channel("shortcut"), data, "○", ["윈도우", "직장인", "듀얼모니터", "단축키"])
+    from tools import publish
+    caps = publish.parse_post(md)
+    for p in ("tiktok", "youtube", "instagram"):
+        text = caps[p].get("caption") or caps[p]["title"] + caps[p]["description"]
+        assert "[광고]" in text and COUPANG_NOTICE in md
+    assert caps["youtube"]["title"].startswith("[광고]")
+
+
+def test_sponsored_episode_is_not_auto_published():
+    from tools import publish
+    assert any("협찬" in p for p in publish.check_ready("shortcut", "ep06"))
+
+
+def test_banned_sponsor_category_is_rejected():
+    data = copy.deepcopy(load_script("money", "ep01"))
+    data["sponsor"] = {"kind": "affiliate", "brand": "어떤 카드사", "category": "신용카드"}
+    errors, _ = validate.check(data, load_channel("money"))
+    assert any("금지된 협찬 분야" in e for e in errors)
+
+
+def test_identity_handles_follow_platform_rules():
+    import re
+    rule = re.compile(r"^(?!\.)(?!.*\.\.)[a-z0-9._]{3,24}(?<!\.)$")
+    handles = []
+    for ch in list_channels():
+        ident = load_channel(ch)["identity"]
+        for h in [ident["handle"], *ident["handle_backups"]]:
+            assert rule.match(h), h
+            handles.append(h)
+        assert len(ident["bio"]) <= 80
+    assert len(handles) == len(set(handles))

@@ -13,13 +13,13 @@ import json
 import sys
 
 from tools import factcheck, publish, validate
-from tools.common import episode_dir, load_channel, load_script, save_json
+from tools.common import COUPANG_NOTICE, episode_dir, load_channel, load_script, save_json
 
 
 def problems(ch: str, ep: str) -> list[str]:
     out = []
     data = load_script(ch, ep)
-    errors, _ = validate.check(data)
+    errors, _ = validate.check(data, load_channel(ch))
     out += [f"대본: {e}" for e in errors]
     d = episode_dir(ch, ep)
     fc = d / "factcheck.md"
@@ -40,6 +40,12 @@ def problems(ch: str, ep: str) -> list[str]:
         for p in publish.publish_conf(load_channel(ch))["platforms"]:
             if p not in caps or publish.unfinished(json.dumps(caps[p], ensure_ascii=False)):
                 out.append(f"post.md: {p} 문구 미완성")
+            elif data.get("sponsor"):
+                text = json.dumps(caps[p], ensure_ascii=False)
+                if "[광고]" not in text and "[협찬]" not in text:
+                    out.append(f"post.md: {p} 문구 첫머리에 [광고]/[협찬] 표시 없음")
+                if data["sponsor"].get("link_type") == "coupang" and COUPANG_NOTICE not in text:
+                    out.append(f"post.md: {p} 에 쿠팡 파트너스 필수 문구 없음")
     return out
 
 
