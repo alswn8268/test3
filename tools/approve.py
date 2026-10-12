@@ -13,7 +13,13 @@ import json
 import sys
 
 from tools import factcheck, publish, validate
-from tools.common import COUPANG_NOTICE, episode_dir, load_channel, load_script, save_json
+from tools.common import (
+    COUPANG_NOTICE,
+    episode_dir,
+    load_channel,
+    load_script,
+    save_json,
+)
 
 
 def problems(ch: str, ep: str) -> list[str]:
@@ -54,6 +60,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("channel")
     ap.add_argument("ep")
     ap.add_argument("--revoke", action="store_true")
+    ap.add_argument("--by", choices=("human", "claude"), default="human",
+                    help="claude: 사람이 위임한 자동 승인 — Claude ✅ 는 공식 출처 + 원문 인용이 있어야 통과")
     a = ap.parse_args(argv)
     path = episode_dir(a.channel, a.ep) / "script.json"
     with open(path, encoding="utf-8") as f:
@@ -65,6 +73,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[{a.channel}/{a.ep}] 승인 취소")
         return 0
     probs = problems(a.channel, a.ep)
+    if a.by == "claude":
+        fc = episode_dir(a.channel, a.ep) / "factcheck.md"
+        if fc.exists():
+            probs += [f"사실 확인: {p}" for p in factcheck.claude_problems(
+                fc.read_text(encoding="utf-8"), load_channel(a.channel).get("official_sources", []))]
     if probs:
         print(f"[{a.channel}/{a.ep}] 승인할 수 없음 ({len(probs)}건)")
         for p in probs[:20]:
@@ -72,6 +85,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     data["status"] = "approved"
     data["approved_at"] = dt.datetime.now(publish.KST).isoformat(timespec="minutes")
+    data["approved_by"] = a.by
     save_json(path, data)
     print(f"[{a.channel}/{a.ep}] 승인 — 다음 자동 업로드 차례에 올라갑니다")
     return 0

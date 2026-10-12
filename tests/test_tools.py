@@ -2,8 +2,16 @@ import copy
 
 import numpy as np
 import pytest
+
 from tools import assemble, audio, factcheck, new_episode, post, review, validate
-from tools.common import list_channels, list_episodes, load_channel, load_script, plain, timeline
+from tools.common import (
+    list_channels,
+    list_episodes,
+    load_channel,
+    load_script,
+    plain,
+    timeline,
+)
 
 ALL = [(ch, ep) for ch in list_channels() for ep in list_episodes(ch)]
 
@@ -327,3 +335,21 @@ def test_motion_gate_tells_static_from_moving(tmp_path):
     s, m = motion_gate.measure(still), motion_gate.measure(moving)
     assert s["fast_ratio"] < 0.035 and motion_gate.verdict(s)[0] == "빨강"
     assert m["fast_ratio"] >= 0.06 and motion_gate.verdict(m)[0] == "초록"
+
+
+# ---------------------------------------------------------------- Claude 위임 승인
+def test_claude_checkmark_needs_official_source_and_quote():
+    rows = [
+        "| # | 장면 | 화면 문구 | 출처 (URL) | 확인 |", "|---|---|---|---|---|",
+        '| 1 | 02 | 가 | https://www.nts.go.kr/a | ✅ Claude: "근로소득자의 신용카드 사용액이 총급여의 25%를" |',
+        '| 2 | 03 | 나 | https://blog.example.com/b | ✅ Claude: "어느 블로그에서 가져온 아주 긴 문장입니다" |',
+        "| 3 | 04 | 다 | https://support.microsoft.com/x | ✅ Claude |",
+        "| 4 | 05 | 라 | https://blog.example.com/c | ✅ |",
+    ]
+    md = "\n".join(rows)
+    probs = factcheck.claude_problems(md, ["https://support.microsoft.com"])
+    text = "\n".join(probs)
+    assert "장면 02" not in text                       # 공식 + 인용 → 통과
+    assert "장면 03" in text and "공식 출처가 아님" in text
+    assert "장면 04" in text and "원문 인용이 없음" in text
+    assert "장면 05" not in text                       # 사람이 찍은 ✅ 는 사람 책임

@@ -11,7 +11,14 @@ from __future__ import annotations
 import argparse
 import sys
 
-from tools.common import COUPANG_NOTICE, episode_dir, load_channel, load_script, plain, sponsor_label
+from tools.common import (
+    COUPANG_NOTICE,
+    episode_dir,
+    load_channel,
+    load_script,
+    plain,
+    sponsor_label,
+)
 
 
 def hook_sentence(data: dict) -> str:

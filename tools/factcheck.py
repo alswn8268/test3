@@ -74,6 +74,36 @@ def problems(md: str) -> list[str]:
     return out
 
 
+# Claude 가 ✅ 를 찍을 때의 기준 (사람이 Claude 에게 위임한 경우)
+#   확인 칸 형식:  ✅ Claude: "출처 원문에서 그대로 옮긴 문장"
+#   출처는 공식 도메인만 (정부·공공기관 .go.kr/.gov, 대학, 채널 official_sources)
+OFFICIAL_SUFFIXES = (".go.kr", ".gov", ".ac.kr", ".edu", ".or.kr")
+
+
+def host(url: str) -> str:
+    return url.split("//", 1)[-1].split("/", 1)[0].lower().removeprefix("www.")
+
+
+def official(url: str, extra: list[str]) -> bool:
+    h = host(url)
+    allowed = {host(u) for u in extra}
+    return h.endswith(OFFICIAL_SUFFIXES) or any(h == a or h.endswith("." + a) for a in allowed)
+
+
+def claude_problems(md: str, official_sources: list[str]) -> list[str]:
+    """Claude 가 찍은 ✅ 는 공식 출처 + 원문 인용이 있어야 인정한다."""
+    out = []
+    for (scene, text), (src, ok) in parse_rows(md).items():
+        tag = f"장면 {scene:02d} \"{text[:30]}\""
+        if "✅" not in ok:
+            continue
+        if "Claude" in ok and not re.search(r'Claude:\s*["“].{8,}["”]', ok):
+            out.append(f"{tag}: Claude ✅ 에 원문 인용이 없음")
+        if "Claude" in ok and not official(src, official_sources):
+            out.append(f"{tag}: 공식 출처가 아님 ({host(src)})")
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("channel")

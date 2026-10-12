@@ -30,7 +30,14 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-from tools.common import channel_dir, episode_dir, list_channels, list_episodes, load_channel, load_script
+from tools.common import (
+    channel_dir,
+    episode_dir,
+    list_channels,
+    list_episodes,
+    load_channel,
+    load_script,
+)
 
 PLATFORMS = ("youtube", "tiktok", "instagram")
 LOG_FIELDS = ["ep", "platform", "published_at", "remote_id", "status"]
