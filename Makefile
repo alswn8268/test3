@@ -1,4 +1,4 @@
-.PHONY: help setup check test stills render assemble batch drafts review analyze
+.PHONY: help setup check test stills render assemble batch drafts review analyze approve due
 
 CH ?= money
 EP ?= ep01
@@ -39,3 +39,10 @@ review:   ## 한 채널 metrics.csv 판정표
 
 analyze:  ## refs/ 폴더의 참고 영상 분석
 	python3 -m tools.analyze_ref refs/*.mp4
+
+approve:  ## 최종본 승인 → 자동 업로드 대기열 (make approve CH=why EP=ep01)
+	python3 -m tools.approve $(CH) $(EP)
+
+due:      ## 자동 업로드: 오늘 차례 + 미리보기
+	python3 -m tools.publish --list-due
+	python3 -m tools.publish --due --dry-run

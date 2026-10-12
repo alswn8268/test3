@@ -69,5 +69,15 @@
       "day": "토",
       "time": "10:30"
     }
-  ]
+  ],
+  "publish": {
+    "every_days": 2,
+    "platforms": [
+      "youtube",
+      "tiktok",
+      "instagram"
+    ],
+    "tiktok_mode": "inbox",
+    "privacy": "public"
+  }
 }

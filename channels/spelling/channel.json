@@ -69,5 +69,15 @@
       "time": "20:30"
     }
   ],
-  "factcheck_scope": "every_scene"
+  "factcheck_scope": "every_scene",
+  "publish": {
+    "every_days": 2,
+    "platforms": [
+      "youtube",
+      "tiktok",
+      "instagram"
+    ],
+    "tiktok_mode": "inbox",
+    "privacy": "public"
+  }
 }

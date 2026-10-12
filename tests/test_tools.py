@@ -208,3 +208,66 @@ def test_theme_transition_sounds_differ():
     names = {th: {n for _, n, _ in audio.sfx_events(scenes, th)} for th in audio.TRANSITION}
     assert "page" in names["notebook"] and "scribble" in names["notebook"]
     assert "boing" in names["lab"] and "whoosh" in names["ledger"]
+
+
+# ---------------------------------------------------------------- 자동 업로드
+def _fake_channel(tmp_path, monkeypatch):
+    import json
+    import shutil
+
+    from tools import common
+    from tools import post as post_tool
+    monkeypatch.setattr(common, "CHANNELS", tmp_path)
+    shutil.copytree(common.ROOT / "channels" / "why", tmp_path / "why",
+                    ignore=shutil.ignore_patterns("clips", "preview", "*.mp4", "*.wav", "published.csv", "post.md"))
+    for ep in ("ep01", "ep02"):
+        d = tmp_path / "why" / "episodes" / ep
+        data = json.loads((d / "script.json").read_text(encoding="utf-8"))
+        data["status"] = "approved"
+        (d / "script.json").write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        (d / "final.mp4").write_bytes(b"fake")
+        md = post_tool.build(load_channel("why"), data, "○", ["상식", "과학", "베리", "딸기"])
+        (d / "post.md").write_text(md.replace("(본문 1~2줄: 영상 핵심 + 지금 할 일)", "본문")
+                                   .replace("(본문 2~3줄: 영상 핵심 + 지금 할 일 1개)", "본문"), encoding="utf-8")
+
+
+def test_publish_parses_three_platform_captions():
+    from tools import publish
+    md = post.build(load_channel("why"), load_script("why", "ep01"), "○", ["상식", "과학", "베리", "딸기"])
+    caps = publish.parse_post(md)
+    assert set(caps) == {"tiktok", "youtube", "instagram"}
+    assert caps["youtube"]["title"] == "딸기는 베리가 아닙니다"
+    assert caps["tiktok"]["caption"].startswith("딸기는 베리가 아닙니다")
+    assert publish.unfinished(caps["instagram"]["caption"])  # 본문 자리표시가 남아 있으면 미완성
+
+
+def test_publish_every_two_days_in_order(tmp_path, monkeypatch):
+    import datetime as dt
+
+    from tools import publish
+    _fake_channel(tmp_path, monkeypatch)
+    calls = []
+    monkeypatch.setattr(publish, "upload_youtube", lambda ch, v, c, p: calls.append(("yt", ch)) or "yt1")
+    monkeypatch.setattr(publish, "upload_tiktok", lambda ch, v, c, m: (calls.append(("tt", ch)) or "tt1", "sent_to_inbox"))
+    monkeypatch.setattr(publish, "upload_instagram", lambda ch, v, c: calls.append(("ig", ch)) or "ig1")
+    t0 = dt.datetime(2026, 10, 13, 11, 40, tzinfo=publish.KST)
+
+    assert publish.due_list(t0) == [("why", "ep01")]
+    dry = publish.publish_one("why", "ep01", list(publish.PLATFORMS), live=False, now=t0)
+    assert all("미리보기" in line for line in dry) and calls == []
+
+    publish.publish_one("why", "ep01", list(publish.PLATFORMS), live=True, now=t0)
+    assert len(calls) == 3
+    assert publish.due_list(t0 + dt.timedelta(days=1)) == []                      # 하루 뒤엔 쉬고
+    assert publish.due_list(t0 + dt.timedelta(days=2)) == [("why", "ep02")]       # 이틀 뒤 다음 편
+    again = publish.publish_one("why", "ep01", list(publish.PLATFORMS), live=True, now=t0)
+    assert all("이미 올림" in line for line in again) and len(calls) == 3         # 같은 편 두 번 안 올림
+
+
+def test_unapproved_episode_is_never_published(tmp_path, monkeypatch):
+    from tools import publish
+    _fake_channel(tmp_path, monkeypatch)
+    from tools.approve import main as approve_main
+    assert approve_main(["why", "ep01", "--revoke"]) == 0
+    assert publish.check_ready("why", "ep01")
+    assert publish.next_episode("why") == "ep02"

@@ -2,7 +2,8 @@
 
 주제가 다른 숏폼 계정 여러 개를 **한 공장**에서 만드는 저장소예요.
 대본 → 사실 확인 → 3D 장면 렌더 → **자체 작곡 배경음·효과음** → 조립 → 업로드 문구 → 48시간 성과 점검까지
-Claude Code 슬래시 명령으로 돌아가요. 사람이 꼭 판단하는 곳은 주제 선정 · 사실 확인(✅) · 업로드 버튼 세 군데예요.
+Claude Code 슬래시 명령으로 돌아가요. 사람이 꼭 판단하는 곳은 주제 선정 · 사실 확인(✅) · 최종 승인 세 군데예요.
+승인한 영상은 **2일에 한 번 자동으로** 유튜브 쇼츠 · 틱톡 · 인스타 릴스에 올라가게 할 수 있어요 ([10. 자동 업로드](#10-자동-업로드-2일에-한-번)).
 
 ## 지금 있는 계정(채널) 4개 — 각각 틱톡 · 유튜브 쇼츠 · 인스타 릴스
 
@@ -142,7 +143,7 @@ python3 -m tools.analyze_ref refs/*.mp4 --out research/refs-2026-W43.md
 - ❌ 같은 영상을 여러 계정에 올리기
 - ❌ 계정끼리 좋아요·댓글·팔로우 몰아주기 (참여 조작으로 보일 수 있음)
 - ❌ 글자만 바꾼 영상을 대량으로 올리기 — 편마다 새 정보가 있어야 해요
-- ✅ 업로드는 사람이 공식 도구(Meta Business Suite / TikTok Studio / YouTube Studio)에서 직접
+- ✅ 업로드는 공식 예약 도구(Meta Business Suite / TikTok Studio / YouTube Studio)나 공식 API 자동 업로드로만 — 브라우저 자동 클릭 도구는 쓰지 않아요
 
 계정 핸들은 각 `channels/<채널>/channel.json` 의 `accounts` 칸에 적어 두세요. `/post` 가 업로드 문구에 같이 표시해요.
 
@@ -166,7 +167,8 @@ python3 -m tools.new_channel cook "자취 요리 3분" --signal "#E8A100" --bgm 
 | ④ 사실 확인 | `/factcheck shortcut ep06` | `factcheck.md` | **원문 보고 ✅** |
 | ⑤ 렌더 | `/render shortcut ep06` | `preview/`, `clips/` | 미리보기 확인 |
 | ⑥ 조립 | `/assemble shortcut ep06` | `final.mp4`, `captions.srt` | 최종 1회 시청 |
-| ⑦ 업로드 | `/post shortcut ep06` | `post.md` | **예약 버튼** |
+| ⑦ 업로드 문구 | `/post shortcut ep06` | `post.md` (플랫폼 3곳) | 문구 확인 |
+| ⑦-1 승인 | `/publish shortcut ep06` | 승인 → 2일 주기 자동 업로드 대기열 | **최종 1회 시청 후 승인** |
 | ⑧ 점검 | `/review shortcut` | `metrics.csv`, `learnings.md` | 수치 입력 |
 
 일요일 밤엔 `make batch` 를 걸어두면 사실 확인이 끝난 모든 채널의 모든 편이 영상까지 완성돼요.
@@ -213,3 +215,54 @@ shorts-channel/
   `/factcheck` 로 출처를 채우고 직접 확인한 뒤에 올려 주세요.
 - 내레이션(목소리)은 아직 없어요. 지금은 '자막 + 음악 + 효과음' 형식이고, `say` 문장이 자막 파일(`captions.srt`)로 들어가요.
 - FilmCraft MCP는 선택 사항이에요 (손으로 다듬을 때만).
+
+---
+
+## 10. 자동 업로드 (2일에 한 번)
+
+### 어떻게 돌아가나요?
+
+```
+[내가 할 일]  영상 확인 → python -m tools.approve why ep01   (승인 = "이거 올려도 돼")
+                  ↓  (main 브랜치에 반영)
+[GitHub Actions]  매일 11:40 깨어남 → 채널마다 "마지막 업로드 후 2일 지났나?" 확인
+                  → 지났으면 다음 승인 편을 렌더 → 유튜브 · 틱톡 · 인스타에 공식 API로 업로드
+                  → channels/<채널>/published.csv 에 기록 (같은 편 두 번 안 올림)
+```
+
+- **승인 안 한 편은 절대 안 올라가요.** 승인하려면 사실 확인 표 ✅ · `final.mp4` · `post.md` 세 플랫폼 문구가 모두 끝나 있어야 해요.
+- 2일 주기는 `channel.json` → `publish.every_days` 로 바꿀 수 있어요. 승인한 편이 없으면 그냥 쉬어요.
+- GitHub Actions는 GitHub 서버에서 도는 무료 예약 실행이라 **내 PC가 꺼져 있어도** 돼요.
+  (비공개 저장소는 한 달 무료 시간이 정해져 있어요. 한 번에 약 10~15분 × 하루 1~2편이면 보통 충분해요.)
+
+### 처음 한 번 준비 (플랫폼별)
+
+각 플랫폼 **개발자 앱**을 만들고 계정마다 로그인 토큰을 받아 GitHub Secrets에 넣어요.
+토큰은 비밀번호와 같아서 저장소·채팅에 붙여넣으면 안 돼요.
+
+| 플랫폼 | 준비 | 꼭 알아둘 점 |
+|---|---|---|
+| 유튜브 | Google Cloud 프로젝트 → YouTube Data API v3 사용 → OAuth 클라이언트(데스크톱 앱) → 채널마다 `python -m tools.auth_youtube` 로 refresh token 받기 | **심사(API 감사) 전에는 API로 올린 영상이 '비공개'로 잠겨요.** 공개로 올리려면 Google의 API 감사 신청이 필요해요 (몇 주 걸릴 수 있음) |
+| 틱톡 | TikTok for Developers 앱 → Content Posting API → 계정마다 로그인해서 refresh token | 기본은 **받은편지함(초안) 모드**: 틱톡 앱에 알림이 오면 '게시'만 누르면 돼요(10초). 완전 자동 게시는 틱톡 앱 심사를 통과해야 하고, 그 전엔 '나만 보기'로만 올라가요 |
+| 인스타그램 | 프로페셔널(비즈니스/크리에이터) 계정 → Meta 개발자 앱(Instagram API, 콘텐츠 게시 권한) → 계정마다 사용자 ID와 장기 토큰 | 장기 토큰은 **약 60일마다 갱신**해야 해요. 인스타그램 로그인 방식이면 `IG_GRAPH_HOST=graph.instagram.com` 도 Secrets에 |
+
+GitHub 저장소 → Settings → Secrets and variables → Actions:
+
+- **Secrets** (공통): `YT_CLIENT_ID` `YT_CLIENT_SECRET` `TIKTOK_CLIENT_KEY` `TIKTOK_CLIENT_SECRET`
+- **Secrets** (채널마다, `<채널>` = `MONEY` `SHORTCUT` `SPELLING` `WHY`):
+  `YT_REFRESH_TOKEN_<채널>` `TIKTOK_REFRESH_TOKEN_<채널>` `IG_USER_ID_<채널>` `IG_ACCESS_TOKEN_<채널>`
+- **Variables**: `SHORTS_AUTOPUBLISH` = `on` (켜기) / `off` (끄기)
+
+### 켜기 전에 시험하기
+
+1. Actions 탭 → `shorts-autopublish` → **Run workflow** (live 체크 안 함) → 무엇이 어디에 올라갈지 미리보기만 해요.
+2. 괜찮으면 `SHORTS_AUTOPUBLISH = on`. 그다음부터 매일 11:40에 확인하고, 차례가 된 채널만 올려요.
+3. 내 PC에서도 확인할 수 있어요: `python -m tools.publish --list-due` · `python -m tools.publish --due --dry-run`
+
+### 심사가 끝나기 전엔 이렇게 쓰는 걸 추천해요
+
+| 플랫폼 | 심사 전 | 심사 후 |
+|---|---|---|
+| 유튜브 | 자동 업로드 → 비공개로 올라감 → Studio에서 '공개'로 바꾸기, 또는 Studio 예약 기능 사용 | 완전 자동 |
+| 틱톡 | 자동으로 받은편지함까지 → 앱에서 '게시' 한 번 | 완전 자동 (`channel.json` → `publish.tiktok_mode` = `direct`) |
+| 인스타 | 내 계정이 앱 관리자·테스터면 개발 모드로 바로 자동 게시 가능 | 완전 자동 |

@@ -86,5 +86,15 @@
       "day": "일",
       "time": "21:50"
     }
-  ]
+  ],
+  "publish": {
+    "every_days": 2,
+    "platforms": [
+      "youtube",
+      "tiktok",
+      "instagram"
+    ],
+    "tiktok_mode": "inbox",
+    "privacy": "public"
+  }
 }
