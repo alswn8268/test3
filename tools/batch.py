@@ -42,7 +42,9 @@ def one(ch: str, ep: str, draft: bool) -> tuple[str, str, str]:
     ok, out = run(py + ["tools.assemble", ch, ep])
     if not ok:
         return ch, ep, "조립 실패 → " + out[-200:]
-    return ch, ep, f"완성 · {fact}" + (f" · 화면 넘침 {warns}건" if warns else "")
+    _, gate = run(py + ["tools.motion_gate", f"channels/{ch}/episodes/{ep}/final.mp4"])
+    light = gate[1:3] if gate.startswith("[") else "?"
+    return ch, ep, f"완성 · {fact} · 움직임 {light}" + (f" · 화면 넘침 {warns}건" if warns else "")
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -20,7 +20,8 @@
          font-feature-settings: "tnum" 1; -webkit-font-smoothing: antialiased; }
   body.dark { background: var(--ink); color: var(--paper); }
 
-  #gl { position:absolute; inset:0; z-index:0; }
+  #deco { position:absolute; inset:0; z-index:0; pointer-events:none; transform-origin:50% 45%; }
+  #gl { position:absolute; inset:0; z-index:1; }
   /* 그레인은 일반 합성으로 (블렌드 모드는 프레임마다 비쌈): 종이 위엔 어두운 점, 먹 위엔 밝은 점 */
   #grain { position:absolute; inset:0; z-index:3; pointer-events:none; opacity:.10; }
   #grain.light { opacity:.06; }
@@ -31,11 +32,17 @@
           font-weight:800; font-size:32px; letter-spacing:-0.5px; }
   #head .mark { display:flex; align-items:center; gap:14px; }
   #head .mark i { width:22px; height:22px; background:var(--signal); display:inline-block; }
-  #head .count { font-weight:700; font-size:30px; opacity:.6; }
+  /* 장면 번호(01/12)는 '넘기는 슬라이드' 느낌을 줘서 숨긴다 (진행 바만 남김) */
+  #head .count { display:none; }
   #rule { position:absolute; left:90px; right:150px; top:272px; height:0; z-index:2;
           border-top:3px dashed currentColor; opacity:.35; }
   #series { position:absolute; left:90px; top:300px; z-index:2; font-weight:700; font-size:28px;
             padding:8px 16px; border:3px solid currentColor; border-radius:999px; opacity:.75; }
+
+  /* 협찬·광고 표시: 영상 처음부터 끝까지 보이게 (공정위 심사지침 — 쉽게 알아볼 수 있는 위치·크기) */
+  #adtag { position:absolute; right:150px; top:300px; z-index:4; display:none; font-weight:800; font-size:30px;
+           padding:8px 18px; border-radius:10px; background:var(--ink); color:var(--paper); border:3px solid var(--paper); }
+  body.dark #adtag { background:var(--paper); color:var(--ink); border-color:var(--ink); }
 
   /* 본문 */
   #stage { position:absolute; left:90px; right:150px; top:470px; z-index:2; transform-origin: 0 0; }
@@ -86,13 +93,79 @@
   /* 하단 진행 바 (릴스 하단 UI 위) */
   #bar { position:absolute; left:90px; right:150px; top:1500px; height:8px; z-index:2; background:currentColor; opacity:.15; }
   #barfill { position:absolute; left:90px; top:1500px; height:8px; z-index:2; background:var(--signal); }
+
+  /* ================================================================
+     채널 테마 — 색만이 아니라 배경·글꼴·강조·등장 모션·3D 배치가 다르다
+     ledger(월급) 종이 장부 · sheet(단축키) 엑셀 화면 · notebook(맞춤법) 공책과 칠판 · lab(호기심) 파란 실험실
+     ================================================================ */
+
+  /* ---- sheet: 엑셀 화면. 셀 격자 + 행/열 번호, 강조 = 셀 선택 상자, 글자는 타이핑 ---- */
+  .theme-sheet #rule { display:none; }
+  .theme-sheet #series { border-radius:6px; border-width:3px; }
+  .theme-sheet .label { display:inline-block; padding:6px 16px; border:4px solid var(--signal-text); margin-bottom:28px; }
+  .theme-sheet .hl::before { left:-14px; right:-14px; bottom:-2%; height:104%;
+      background:color-mix(in srgb, var(--signal) 20%, transparent); outline:6px solid var(--signal); }
+  .theme-sheet .hl::after { content:""; position:absolute; right:-22px; bottom:-10px; width:18px; height:18px;
+      background:var(--signal); border:3px solid var(--paper); opacity:clamp(0, calc((var(--w, 0) - 0.95) * 20), 1); }
+  .theme-sheet .pre::before { content:"fx"; font-style:italic; font-weight:800; margin-right:18px; opacity:.6; }
+  .theme-sheet .pre { display:inline-block; padding:8px 18px; border:3px solid currentColor; border-radius:6px; }
+  .theme-sheet .cmp .box { border-width:4px; border-radius:6px; }
+  .theme-sheet .cmp .box.on { outline:8px solid var(--signal); outline-offset:-4px; }
+  .theme-sheet .item { border-bottom:3px solid rgba(127,127,127,.25); }
+
+  /* ---- notebook: 공책(밝은 장면)과 칠판(어두운 장면). 제목은 명조, 강조 = 형광 밑줄, 글자는 써 내려가듯 ---- */
+  .theme-notebook #rule { border-top-style:solid; opacity:.25; }
+  .theme-notebook .line, .theme-notebook .cmp-title { font-family:"Noto Serif CJK KR", "Noto Serif KR", serif; letter-spacing:-4px; line-height:1.22; }
+  .theme-notebook .line { font-size:104px; }
+  .theme-notebook .hook .line { font-size:110px; }
+  .theme-notebook .cmp-title { font-size:88px; }
+  .theme-notebook .hl::before { left:-6px; right:-6px; bottom:-4%; height:20%; border-radius:10px; transform:scaleX(var(--w,0)) rotate(-1.4deg); }
+  .theme-notebook .label { font-style:normal; letter-spacing:2px; }
+  .theme-notebook .label::before { content:"✎ "; }
+  .theme-notebook .cmp .box { border:3px solid currentColor; border-radius:16px; }
+  .theme-notebook .cmp .box:first-child { transform:rotate(-1.5deg); }
+  .theme-notebook .cmp .box.on { transform:rotate(1.2deg); }
+  .theme-notebook .cmp .vw { position:relative; display:inline-block; }
+  .theme-notebook .strike { position:absolute; left:-6%; top:52%; height:12px; width:112%; background:var(--signal-text);
+      border-radius:6px; transform-origin:0 50%; transform:scaleX(0) rotate(-4deg); }
+  .theme-notebook .ring { position:absolute; left:-14%; top:-22%; width:128%; height:144%; overflow:visible; }
+  .theme-notebook .item { border-bottom:3px solid color-mix(in srgb, var(--signal) 35%, transparent); }
+
+  /* ---- lab: 파란 실험실. 흰 글자 + 굵은 남색 외곽선, 강조 = 노란 글자 팡, 가운데 정렬, 3D 크게 위쪽 ---- */
+  .theme-lab { color:#fff; }
+  .theme-lab #rule { border-top-style:solid; opacity:.3; }
+  .theme-lab #head .mark i { border-radius:50%; }
+  .theme-lab #stage { top:960px; text-align:center; transform-origin:50% 0; }
+  .theme-lab .line, .theme-lab .cmp-title, .theme-lab .big, .theme-lab .pre, .theme-lab .sub, .theme-lab .item {
+      color:#fff; -webkit-text-stroke:16px var(--ink); paint-order:stroke fill; }
+  .theme-lab .line { font-size:108px; line-height:1.2; }
+  .theme-lab .hook .line { font-size:116px; }
+  .theme-lab .sub { -webkit-text-stroke:10px var(--ink); opacity:1; font-weight:800; }
+  .theme-lab .pre { -webkit-text-stroke:10px var(--ink); opacity:1; font-weight:800; }
+  .theme-lab .hl { color:var(--signal); transform:scale(calc(1.3 - 0.3 * var(--w, 0))); transform-origin:50% 60%; }
+  .theme-lab .hl::before { display:none; }
+  .theme-lab .red { color:var(--signal); }
+  .theme-lab .label { display:inline-block; background:var(--signal); color:var(--ink); padding:10px 26px; border-radius:999px;
+      border:5px solid var(--ink); margin-bottom:26px; }
+  .theme-lab .big { color:var(--signal); font-family:"Pre", sans-serif; letter-spacing:-6px; margin:10px 0; }
+  .theme-lab .cmp .box { background:#fff; color:var(--ink); border:6px solid var(--ink); border-radius:28px; text-align:center; }
+  .theme-lab .cmp .box.on { background:var(--signal); color:var(--ink); }
+  .theme-lab .cmp .on .v { color:var(--ink); }
+  .theme-lab .items { display:inline-block; text-align:left; }
+  .theme-lab .item { border-bottom:none; -webkit-text-stroke:12px var(--ink); }
+  .theme-lab .box64 { background:#fff; color:var(--ink); border-color:var(--ink); border-radius:12px; }
+  .theme-lab .stamp { top:-430px; right:20px; background:#fff; border-color:var(--ink); color:var(--ink); }
+  .theme-lab .stamp::after { border-color:var(--ink); }
+  .theme-lab #bar { background:#fff; opacity:.3; }
 </style>
 </head>
 <body>
+<canvas id="deco" width="1080" height="1920"></canvas>
 <canvas id="gl" width="1080" height="1920"></canvas>
 <div id="head"><div class="mark"><i></i><span id="wordmark"></span></div><div class="count" id="count">01 / 12</div></div>
 <div id="rule"></div>
 <div id="series"></div>
+<div id="adtag"></div>
 <div id="stage"></div>
 <div id="bar"></div><div id="barfill"></div>
 <canvas id="grain" width="1080" height="1920"></canvas>
@@ -111,11 +184,16 @@ const C = { paper: hex(channel.colors.paper), ink: hex(channel.colors.ink), sign
 for (const k of ['paper', 'ink', 'signal']) document.documentElement.style.setProperty(`--${k}`, channel.colors[k]);
 document.documentElement.style.setProperty('--signal-text', channel.colors.signal_text || channel.colors.signal);
 document.getElementById('wordmark').textContent = channel.name;
+const THEME = channel.theme || 'ledger';
+document.body.classList.add(`theme-${THEME}`);
 const PROPS = { hero: 'card', stack: 'coin', point: ['card', 'coin', 'receipt'], ...(channel.props || {}) };
 const scenes = ep.scenes.map(s => ({ dur: 2.4, ...s }));
 let acc = 0; for (const s of scenes) { s.t0 = acc; acc += s.dur; }
 const TOTAL = acc;
 document.getElementById('series').textContent = ep.series;
+// tools/common.py 의 SPONSOR_KINDS 와 같은 문구
+const AD = { paid: '유료 광고 포함', gifted: '협찬 · 제품 제공', affiliate: '제휴 링크 · 수수료 받음' };
+if (ep.sponsor && AD[ep.sponsor.kind]) { const t = document.getElementById('adtag'); t.textContent = AD[ep.sponsor.kind]; t.style.display = 'block'; }
 
 // ---------- 종이 질감(그레인): 한 번만 그려 둔다 (SVG 필터는 매 프레임 다시 계산돼 느림) ----------
 {
@@ -129,6 +207,47 @@ const setGrain = dark => { const c = document.getElementById('grain'); if (c.cla
   const g = c.getContext('2d'); const d = g.getImageData(0, 0, 1080, 1920); const v = dark ? 255 : 0;
   for (let i = 0; i < d.data.length; i += 4) { d.data[i] = d.data[i + 1] = d.data[i + 2] = v; }
   g.putImageData(d, 0, 0); c.classList.toggle('light', dark); };
+
+// ---------- 테마 배경 (#deco): 밝은/어두운 장면이 바뀔 때만 다시 그린다 ----------
+let decoDark = null;
+function drawDeco(dark) {
+  if (decoDark === dark) return; decoDark = dark;
+  const c = document.getElementById('deco'), g = c.getContext('2d'), W = 1080, H = 1920;
+  g.clearRect(0, 0, W, H);
+  const col = channel.colors, fg = dark ? col.paper : col.ink;
+  const line = (x1, y1, x2, y2) => { g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
+  if (THEME === 'sheet') {           // 엑셀: 셀 격자 + 열 머리(A B C…) + 행 번호
+    g.fillStyle = dark ? col.ink : col.paper; g.fillRect(0, 0, W, H);
+    const top = 400, cw = 190, rh = 72, gut = 70;
+    g.globalAlpha = dark ? 0.10 : 0.09; g.strokeStyle = fg; g.lineWidth = 2;
+    for (let x = gut; x <= W; x += cw) line(x, top, x, H);
+    for (let y = top; y <= H; y += rh) line(0, y, W, y);
+    g.globalAlpha = dark ? 0.08 : 0.06; g.fillStyle = fg; g.fillRect(0, top, W, rh); g.fillRect(0, top, gut, H);
+    g.globalAlpha = dark ? 0.35 : 0.4; g.font = '700 30px Pre'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    'ABCDEF'.split('').forEach((ch, i) => g.fillText(ch, gut + cw * i + cw / 2, top + rh / 2));
+    for (let n = 1, y = top + rh; y < H; n++, y += rh) g.fillText(String(n), gut / 2, y + rh / 2);
+  } else if (THEME === 'notebook') {
+    g.fillStyle = dark ? (col.board || col.ink) : col.paper; g.fillRect(0, 0, W, H);
+    if (dark) {                       // 칠판: 분필 자국
+      let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      for (let i = 0; i < 26; i++) { const x = rnd() * W, y = rnd() * H, rr = 80 + rnd() * 260;
+        const grd = g.createRadialGradient(x, y, 0, x, y, rr); grd.addColorStop(0, 'rgba(255,255,255,0.05)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = grd; g.fillRect(x - rr, y - rr, rr * 2, rr * 2); }
+      g.globalAlpha = 0.5; g.fillStyle = '#8a6a43'; g.fillRect(0, H - 40, W, 40);   // 분필 받침
+    } else {                          // 공책: 가로줄 + 빨간 여백선 + 구멍
+      g.strokeStyle = col.signal; g.globalAlpha = 0.22; g.lineWidth = 3;
+      for (let y = 452; y < H; y += 92) line(0, y, W, y);
+      g.strokeStyle = '#E0443A'; g.globalAlpha = 0.45; line(66, 0, 66, H); line(74, 0, 74, H);
+      g.globalAlpha = 0.12; g.fillStyle = col.ink; for (const y of [560, 960, 1360]) { g.beginPath(); g.arc(30, y, 16, 0, Math.PI * 2); g.fill(); }
+    }
+  } else if (THEME === 'lab') {      // 파란 실험실: 위가 밝은 그라데이션 (바닥 격자는 3D)
+    const grd = g.createLinearGradient(0, 0, 0, H);
+    if (dark) { grd.addColorStop(0, '#1C2E66'); grd.addColorStop(1, col.ink); }
+    else { grd.addColorStop(0, '#8DB6FF'); grd.addColorStop(0.55, col.paper); grd.addColorStop(1, '#3A6CDB'); }
+    g.fillStyle = grd; g.fillRect(0, 0, W, H);
+  }
+  g.globalAlpha = 1;
+}
 
 // ---------- 유틸 ----------
 const clamp = (x, a=0, b=1) => Math.min(b, Math.max(a, x));
@@ -271,7 +390,19 @@ function build3D(s, i) {
     else if (name === 'coin' || name === 'keycap') { for (let k = 0; k < 3; k++) add(prop(name, k + 1), { kind:'float', k, x: px2w(700 + k*110, 1340 + (k%2)*60)[0], y: px2w(0, 1340 + (k%2)*70)[1], s: name === 'coin' ? 0.62 : 0.34 }); }
     else { add(prop(name), { kind:'tilt', x: px2w(800,1340)[0], y: px2w(800,1340)[1], s: name === 'card' ? 0.95 : 0.7 }); }
   }
+  if (THEME === 'lab') {   // 3D를 화면 위쪽 가운데에 크게 (글자는 아래 가운데)
+    const cx = items.reduce((a, it) => a + it.x, 0) / items.length, cy = items.reduce((a, it) => a + it.y, 0) / items.length;
+    const [tx, ty] = px2w(s.type === 'cta' ? 400 : 540, s.type === 'cta' ? 620 : 700);
+    const k = s.type === 'check' ? 0.8 : s.type === 'cta' ? 0.85 : 1.4;   // 영수증·책갈피는 커지면 글자를 가린다
+    for (const it of items) { it.x = tx + (it.x - cx) * 1.25; it.y = ty + (it.y - cy) * 1.25 + (s.type === 'check' ? 1.2 : 0); it.s *= k; }
+  }
   anim = items;
+}
+let labGrid = null;
+if (THEME === 'lab') {
+  labGrid = new THREE.GridHelper(60, 30, 0xffffff, 0xffffff);
+  labGrid.material.transparent = true; labGrid.material.opacity = 0.35;
+  const floor = new THREE.Group(); floor.add(labGrid); floor.position.set(0, -6.5, -4); floor.rotation.x = 0.62; scene3.add(floor);
 }
 function update3D(lt, dur) {
   for (const it of anim) {
@@ -294,6 +425,7 @@ function update3D(lt, dur) {
       case 'float': o.position.set(it.x, it.y + Math.sin(lt*2.2 + it.k)*0.25 - (1-inT)*4, 0); o.rotation.set(1.1 + Math.sin(lt + it.k)*0.3, lt*1.3 + it.k, 0.2); break;
     }
   }
+  camera.position.z = CAM_Z;
   renderer.render(scene3, camera);
 }
 
@@ -310,11 +442,15 @@ function buildDOM(s) {
     h += `<div class="pre a">${mark(s.pre)}</div><div class="big a" data-num="${esc(s.big)}">${esc(s.big)}</div><div class="sub a">${mark(s.sub)}</div>`;
   } else if (s.type === 'compare') {
     // 숫자면 세리프, 글자(맞춤법 등)면 고딕
-    const v = x => `<div class="v${/\d/.test(x) ? '' : ' word'}">${esc(x)}</div>`;
+    const v = (x, side) => {
+      let inner = esc(x);
+      if (THEME === 'notebook') inner = side === 'left' ? `<span class="vw">${inner}<span class="strike"></span></span>`
+        : `<span class="vw">${inner}<svg class="ring" viewBox="0 0 100 100" preserveAspectRatio="none"><ellipse cx="50" cy="50" rx="47" ry="42" fill="none" vector-effect="non-scaling-stroke" stroke-width="9" stroke-linecap="round" style="stroke:var(--signal)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" transform="rotate(-5 50 50)"/></svg></span>`;
+      return `<div class="v${/\d/.test(x) ? '' : ' word'}">${inner}</div>`; };
     if (s.label) h += `<div class="label a">${esc(s.label)}</div>`;
     h += (s.title || []).map(l => `<div class="cmp-title a">${mark(l)}</div>`).join('');
-    h += `<div class="cmp a"><div class="box"><div class="k">${esc(s.left[0])}</div>${v(s.left[1])}</div>
-          <div class="box on"><div class="k">${esc(s.right[0])}</div>${v(s.right[1])}</div></div>`;
+    h += `<div class="cmp a"><div class="box"><div class="k">${esc(s.left[0])}</div>${v(s.left[1], 'left')}</div>
+          <div class="box on"><div class="k">${esc(s.right[0])}</div>${v(s.right[1], 'right')}</div></div>`;
     if (s.sub) h += `<div class="sub a">${mark(s.sub)}</div>`;
   } else if (s.type === 'keys') {
     if (s.label) h += `<div class="label a">${esc(s.label)}</div>`;
@@ -329,18 +465,18 @@ function buildDOM(s) {
   stage.className = s.type === 'hook' ? 'hook' : s.type === 'number' ? 'num' : '';
   stage.innerHTML = h;
   document.body.classList.toggle('dark', isDark(s));
-  setGrain(isDark(s));
+  setGrain(isDark(s)); drawDeco(isDark(s));
   // 큰 숫자가 안전 영역(폭 840px)을 넘으면 글자 크기를 줄인다 (예: '1,000만')
   const big = stage.querySelector('.big');
   if (big) {
     stage.style.transform = '';
     const r = document.createRange(); r.selectNodeContents(big);
-    const w = r.getBoundingClientRect().width, max = 1080 - 90 - 150 - 10;
+    const w = r.getBoundingClientRect().width, max = (1080 - 90 - 150 - 10) / 1.03;
     if (w > max) big.style.fontSize = `${Math.floor(250 * max / w)}px`;
   }
   // 비교 상자 안 글자, 키캡 줄도 폭에 맞게 줄인다
   stage.querySelectorAll('.cmp .v').forEach(el => {
-    const box = (840 - 28) / 2 - 70; const r = document.createRange(); r.selectNodeContents(el);
+    const box = (840 - 28) / 2 - 70; const r = document.createRange(); r.selectNodeContents(el.querySelector('.vw')?.firstChild || el);
     const w = r.getBoundingClientRect().width; const fs = parseFloat(getComputedStyle(el).fontSize);
     if (w > box) el.style.fontSize = `${Math.floor(fs * box / w)}px`;
   });
@@ -354,14 +490,43 @@ function fmtNum(src, p) {
   if (m[2].includes(',')) s = Number(s).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
   return m[1] + s + m[3];
 }
+// 테마별 글자 등장 방식
+const slideUp = (el, k, lt) => { const e = easeOut((lt - 0.06 - k*0.07) / 0.38);
+  el.style.opacity = e; el.style.transform = `translateY(${(1-e)*70}px)`; };
+const ENTER = {
+  ledger: slideUp,
+  sheet: (el, k, lt) => {          // 제목 줄은 한 글자씩 타이핑, 나머지는 위로
+    if (!el.classList.contains('line')) return slideUp(el, k, lt);
+    const n = Math.max(1, el.textContent.length), d = clamp((lt - 0.04 - k*0.16) / 0.3), p = Math.ceil(d * n) / n;
+    el.style.opacity = d > 0 ? 1 : 0; el.style.clipPath = `inset(-30% ${(1 - p) * 100}% -30% -3%)`; },
+  notebook: (el, k, lt) => {       // 펜으로 써 내려가듯 왼쪽부터
+    const d = easeOut((lt - 0.06 - k*0.09) / 0.45);
+    el.style.opacity = d > 0 ? 1 : 0; el.style.clipPath = `inset(-40% ${(1 - d) * 100}% -40% -4%)`; },
+  lab: (el, k, lt) => {            // 통! 튀어나오듯
+    const t = (lt - 0.06 - k*0.08); const e = easeBack(clamp(t / 0.32));
+    el.style.opacity = clamp(t / 0.1); el.style.transform = `scale(${0.55 + 0.45 * e})`; el.style.transformOrigin = '50% 50%'; },
+};
+// 장면 시작 0.22초: 살짝 확대된 상태에서 '탁' 자리 잡기 → 0.6초: 0.28초 동안 8% 빠르게 다가감 → 멈춤
+let CAM_Z = 20;
+function pulse(lt) {
+  const settle = lt < 0.22 ? 0.10 * (1 - easeOut(lt / 0.22)) : 0;
+  const push = 1 - Math.pow(1 - clamp((lt - 0.6) / 0.28), 3);
+  return { bg: 1 + settle + 0.08 * push, txt: 1 + 0.2 * settle + 0.02 * push };   // 글자는 안전 영역 때문에 2%만
+}
+// 쾅 박히기 (0.17초): 1.55 → 0.94 → 1.0
+function slam(t) {
+  if (t <= 0) return 1; if (t >= 0.17) return 1;
+  const u = t / 0.17; return u < 0.6 ? 1.55 - (1.55 - 0.94) * easeOut(u / 0.6) : 0.94 + 0.06 * easeOut((u - 0.6) / 0.4);
+}
 function updateDOM(s, lt) {
   const els = stage.querySelectorAll('.a');
-  els.forEach((el, k) => {
-    const e = easeOut((lt - 0.06 - k*0.07) / 0.38);
-    el.style.opacity = e; el.style.transform = `translateY(${(1-e)*70}px)`;
-  });
+  els.forEach((el, k) => ENTER[THEME](el, k, lt));
+  stage.querySelectorAll('.strike').forEach(el => el.style.transform = `scaleX(${easeOut((lt - 0.55) / 0.22)}) rotate(-4deg)`);
+  stage.querySelectorAll('.ring ellipse').forEach(el => el.setAttribute('stroke-dashoffset', 1 - easeOut((lt - 0.8) / 0.35)));
   stage.querySelectorAll('.hl').forEach((el, k) => el.style.setProperty('--w', easeOut((lt - 0.35 - k*0.1) / 0.35)));
-  const big = stage.querySelector('.big'); if (big) big.textContent = fmtNum(big.dataset.num, easeOut((lt - 0.15) / 0.9));
+  const big = stage.querySelector('.big');
+  if (big) { big.textContent = fmtNum(big.dataset.num, easeOut((lt - 0.15) / 0.9));
+    big.style.transform = `scale(${slam(lt - 0.9)})`; big.style.transformOrigin = THEME === 'lab' ? '50% 60%' : '0 60%'; }
   stage.querySelectorAll('.item path').forEach((p, k) => p.setAttribute('stroke-dashoffset', 1 - easeOut((lt - 0.45 - k*0.45) / 0.25)));
   stage.querySelectorAll('.kc').forEach((el, k) => {   // 키캡: 0.30 + k*0.20 초에 '딸깍' (tools/audio.py 와 같은 시간표)
     const d = clamp((lt - 0.30 - k*0.20) / 0.14); el.style.opacity = d > 0 ? 1 : 0;
@@ -371,7 +536,12 @@ function updateDOM(s, lt) {
   const st = stage.querySelector('.stamp');
   if (st) { const d = clamp((lt - 0.7) / 0.18); st.style.opacity = d > 0 ? 1 : 0;
     st.style.transform = `rotate(-14deg) scale(${1 + (1 - d) * 1.6})`; }
-  stage.style.transform = `scale(${1 + lt * 0.006})`;   // 아주 느린 푸시인
+  // 카메라 리듬: 멈춤 → 빠르게 다가감 → 멈춤 (느린 일정 확대 대신). huashu-art-motion '맥박 리듬' 참고
+  const P = pulse(lt);
+  stage.style.transform = `scale(${P.txt})`;
+  document.getElementById('deco').style.transform = `scale(${P.bg})`;
+  CAM_Z = 20 - 3.4 * (P.bg - 1) / 0.08;
+  if (labGrid) labGrid.position.z = (lt * 1.6) % 2;    // 실험실 바닥 격자가 천천히 다가옴
 }
 
 window.TOTAL = TOTAL;

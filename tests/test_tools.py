@@ -310,3 +310,20 @@ def test_identity_handles_follow_platform_rules():
             handles.append(h)
         assert len(ident["bio"]) <= 80
     assert len(handles) == len(set(handles))
+
+
+# ---------------------------------------------------------------- 움직임 관문
+def test_motion_gate_tells_static_from_moving(tmp_path):
+    import shutil
+    import subprocess
+    if not shutil.which("ffmpeg"):
+        pytest.skip("ffmpeg 없음")
+    from tools import motion_gate
+    still, moving = tmp_path / "still.mp4", tmp_path / "moving.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=360x640:rate=30:duration=3",
+                    "-vf", "trim=end_frame=1,loop=89:1:0", "-pix_fmt", "yuv420p", str(still)], check=True)
+    subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=360x640:rate=30:duration=3",
+                    "-vf", "scroll=horizontal=0.02", "-pix_fmt", "yuv420p", str(moving)], check=True)  # 화면 전체가 움직임
+    s, m = motion_gate.measure(still), motion_gate.measure(moving)
+    assert s["fast_ratio"] < 0.035 and motion_gate.verdict(s)[0] == "빨강"
+    assert m["fast_ratio"] >= 0.06 and motion_gate.verdict(m)[0] == "초록"
