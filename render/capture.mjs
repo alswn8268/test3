@@ -1,6 +1,6 @@
 // 장면 렌더러: script.json 한 편을 받아 미리보기 PNG 또는 장면별 MP4를 만든다.
 //
-// 사용법 (shorts-channel 폴더에서):
+// 사용법 (저장소 최상위 폴더에서):
 //   node render/capture.mjs money ep01 --stills   → channels/money/episodes/ep01/preview/s01.png … s12.png
 //   node render/capture.mjs money ep01            → channels/money/episodes/ep01/clips/s01.mp4 … (30fps)
 //   node render/capture.mjs money ep01 --only 3   → 3번 장면만

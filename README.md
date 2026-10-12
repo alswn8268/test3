@@ -85,7 +85,7 @@ Claude Code 슬래시 명령으로 돌아가요. 사람이 꼭 판단하는 곳�
 필요한 것: Node.js 20+, Python 3.11+, ffmpeg
 
 ```bash
-cd shorts-channel
+git clone https://github.com/alswn8268/test3.git && cd test3
 make setup          # npm 패키지 + render/vendor 준비 + 파이썬 numpy·pytest
 ```
 
@@ -206,8 +206,9 @@ python3 -m tools.new_channel cook "자취 요리 3분" --signal "#E8A100" --bgm 
 ## 8. 폴더 구조
 
 ```
-shorts-channel/
+test3/
   CLAUDE.md                      모든 채널 공통 규칙 (Claude Code가 자동으로 읽음)
+  .github/workflows/             shorts-publish.yml (2일 주기 자동 업로드)
   .claude/skills/                trend · analyze · topics · script · factcheck · render · assemble · post · review · channel
   channels/
     money/      channel.json · episodes/ep01~05 · topics/ · metrics.csv · learnings.md · backlog.md

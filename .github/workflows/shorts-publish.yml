@@ -1,0 +1,99 @@
+# 숏폼 자동 업로드
+# - 매일 한 번 깨어나서, 채널별로 '마지막 업로드 후 2일이 지났고 사람이 승인한 편'이 있으면
+#   그 편을 렌더 → 유튜브 쇼츠 · 틱톡 · 인스타 릴스에 공식 API 로 올린다.
+# - 꺼진 상태로 시작한다. 켜려면: 저장소 Settings → Secrets and variables → Actions → Variables 에
+#   SHORTS_AUTOPUBLISH = on  (끄려면 off). 수동 실행(Run workflow)은 기본이 미리보기(dry-run).
+# - 예약 실행은 기본 브랜치(main)의 내용으로 돈다 → 승인(tools.approve)한 편이 main 에 들어가 있어야 한다.
+name: shorts-autopublish
+
+on:
+  schedule:
+    - cron: "40 2 * * *"   # 매일 11:40 KST (UTC 02:40)
+  workflow_dispatch:
+    inputs:
+      live:
+        description: "실제 업로드 (체크 안 하면 미리보기만)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # published.csv 기록을 저장소에 다시 커밋
+
+concurrency:
+  group: shorts-autopublish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: vars.SHORTS_AUTOPUBLISH == 'on' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 오늘 올릴 차례 확인
+        id: due
+        run: |
+          pip install -r requirements.txt
+          python -m tools.publish --list-due | tee due.txt
+          echo "count=$(grep -c . due.txt || true)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.due.outputs.count != '0'
+        with:
+          node-version: "22"
+
+      - name: 렌더 도구 설치
+        if: steps.due.outputs.count != '0'
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          npm ci
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD= npx playwright install --with-deps chromium
+          npm run setup
+
+      - name: 렌더 (영상은 git 에 없으므로 여기서 만든다)
+        if: steps.due.outputs.count != '0'
+        run: |
+          while read -r ch ep; do
+            [ -n "$ch" ] && python -m tools.batch "$ch" --eps "$ep"
+          done < due.txt
+
+      - name: 업로드
+        if: steps.due.outputs.count != '0'
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN_MONEY: ${{ secrets.YT_REFRESH_TOKEN_MONEY }}
+          YT_REFRESH_TOKEN_SHORTCUT: ${{ secrets.YT_REFRESH_TOKEN_SHORTCUT }}
+          YT_REFRESH_TOKEN_SPELLING: ${{ secrets.YT_REFRESH_TOKEN_SPELLING }}
+          YT_REFRESH_TOKEN_WHY: ${{ secrets.YT_REFRESH_TOKEN_WHY }}
+          TIKTOK_REFRESH_TOKEN_MONEY: ${{ secrets.TIKTOK_REFRESH_TOKEN_MONEY }}
+          TIKTOK_REFRESH_TOKEN_SHORTCUT: ${{ secrets.TIKTOK_REFRESH_TOKEN_SHORTCUT }}
+          TIKTOK_REFRESH_TOKEN_SPELLING: ${{ secrets.TIKTOK_REFRESH_TOKEN_SPELLING }}
+          TIKTOK_REFRESH_TOKEN_WHY: ${{ secrets.TIKTOK_REFRESH_TOKEN_WHY }}
+          IG_USER_ID_MONEY: ${{ secrets.IG_USER_ID_MONEY }}
+          IG_USER_ID_SHORTCUT: ${{ secrets.IG_USER_ID_SHORTCUT }}
+          IG_USER_ID_SPELLING: ${{ secrets.IG_USER_ID_SPELLING }}
+          IG_USER_ID_WHY: ${{ secrets.IG_USER_ID_WHY }}
+          IG_ACCESS_TOKEN_MONEY: ${{ secrets.IG_ACCESS_TOKEN_MONEY }}
+          IG_ACCESS_TOKEN_SHORTCUT: ${{ secrets.IG_ACCESS_TOKEN_SHORTCUT }}
+          IG_ACCESS_TOKEN_SPELLING: ${{ secrets.IG_ACCESS_TOKEN_SPELLING }}
+          IG_ACCESS_TOKEN_WHY: ${{ secrets.IG_ACCESS_TOKEN_WHY }}
+          LIVE_FLAG: ${{ (github.event_name == 'schedule' || inputs.live) && '--live' || '--dry-run' }}
+        run: python -m tools.publish --due "$LIVE_FLAG"
+
+      - name: 업로드 기록 저장
+        if: always() && steps.due.outputs.count != '0'
+        run: |
+          git config user.name "shorts-autopublish"
+          git config user.email "actions@users.noreply.github.com"
+          git add channels/*/published.csv || true
+          git diff --cached --quiet || (git commit -m "chore: 숏폼 업로드 기록" && git push)
