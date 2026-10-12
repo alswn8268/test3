@@ -392,8 +392,9 @@ function build3D(s, i) {
   }
   if (THEME === 'lab') {   // 3D를 화면 위쪽 가운데에 크게 (글자는 아래 가운데)
     const cx = items.reduce((a, it) => a + it.x, 0) / items.length, cy = items.reduce((a, it) => a + it.y, 0) / items.length;
-    const [tx, ty] = px2w(s.type === 'cta' ? 400 : 540, s.type === 'cta' ? 620 : 700);
-    const k = s.type === 'check' ? 0.8 : s.type === 'cta' ? 0.85 : 1.4;   // 영수증·책갈피는 커지면 글자를 가린다
+    const [tx, ty] = px2w(s.type === 'cta' ? 400 : 540, s.type === 'cta' ? 620 : s.type === 'hook' ? 680 : 700);
+    // 영수증·책갈피는 커지면 글자를 가리고, 후킹은 카메라가 다가가며 커지므로 조금 작게
+    const k = s.type === 'check' ? 0.8 : s.type === 'cta' ? 0.85 : s.type === 'hook' ? 1.1 : 1.4;
     for (const it of items) { it.x = tx + (it.x - cx) * 1.25; it.y = ty + (it.y - cy) * 1.25 + (s.type === 'check' ? 1.2 : 0); it.s *= k; }
   }
   anim = items;
