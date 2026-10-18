@@ -17,6 +17,10 @@ from tools.common import TOTAL_SEC, channel_dir
 
 COLUMNS = ["ep", "platform", "posted_at", "views", "viewed_3s", "avg_watch_sec",
            "saves", "shares", "profile_visits", "follows"]
+# 있으면 쓰는 칸 (플랫폼 인사이트에 있을 때만 적는다)
+#   sends            인스타 'DM으로 보내기' 수 — 비팔로워에게 퍼지는 가장 강한 신호 (모세리)
+#   viewed_vs_swiped 유튜브 쇼츠 '본 비율(스와이프하지 않고 본 사람 %)', 0~100
+OPTIONAL = ["sends", "viewed_vs_swiped"]
 
 # (이름, 계산, 통과 기준, 미달이면 고칠 곳)
 THRESHOLDS = [
@@ -24,6 +28,8 @@ THRESHOLDS = [
     ("완주율", lambda r: r["avg_watch_sec"] / TOTAL_SEC, 0.50, "중간 장면 수 줄이기, 정보 3개 → 2개"),
     ("저장률", lambda r: r["saves"] / r["views"], 0.01, "체크리스트 장면 추가, '나중에 볼 이유' CTA"),
     ("공유율", lambda r: r["shares"] / r["views"], 0.005, "'부모님·친구에게' 같은 공유 대상 지목"),
+    ("보내기율", lambda r: r["sends"] / r["views"], 0.005, "CTA 에 보낼 사람을 구체적으로 ('카드만 쓰는 회사 동기에게')"),
+    ("스와이프 안 함", lambda r: r["viewed_vs_swiped"] / 100, 0.70, "첫 1초에 주제어를 말+자막으로, 후킹 물건을 더 크게"),
     ("팔로우 전환", lambda r: r["follows"] / r["profile_visits"], 0.10, "프로필 첫 줄, 시리즈 고정 게시물"),
 ]
 
@@ -38,6 +44,8 @@ def read_rows(path: Path) -> list[dict]:
                 continue
             for k in COLUMNS[3:]:
                 r[k] = float(r[k] or 0)
+            for k in OPTIONAL:  # 비어 있으면 '측정 안 함'(None) — 미달로 세지 않는다
+                r[k] = float(r[k]) if r.get(k) not in (None, "") else None
             rows.append(r)
         return rows
 
@@ -50,24 +58,29 @@ def grade(row: dict) -> list[tuple[str, float | None, bool, str]]:
         except ZeroDivisionError:
             out.append((name, None, False, fix))
             continue
+        except (TypeError, KeyError):  # 선택 칸이 비었거나 없음 → 표에서 빼기
+            continue
         out.append((name, v, v >= target, fix))
     return out
 
 
 def report(rows: list[dict]) -> str:
-    lines = ["| 편 | 플랫폼 | " + " | ".join(t[0] for t in THRESHOLDS) + " | 통과 | 판단 |",
-             "|---|---|" + "---|" * len(THRESHOLDS) + "---|---|"]
+    names = [t[0] for t in THRESHOLDS if any(n == t[0] for r in rows for n, *_ in grade(r))]
+    lines = ["| 편 | 플랫폼 | " + " | ".join(names) + " | 통과 | 판단 |",
+             "|---|---|" + "---|" * len(names) + "---|---|"]
     misses: Counter[str] = Counter()
     fixes = {t[0]: t[3] for t in THRESHOLDS}
     for r in rows:
         g = grade(r)
-        cells = [("–" if v is None else f"{v * 100:.1f}% {'✅' if ok else '❌'}") for _, v, ok, _ in g]
+        by = {n: (v, ok) for n, v, ok, _ in g}
+        cells = [("" if n not in by else "–" if by[n][0] is None else f"{by[n][0] * 100:.1f}% {'✅' if by[n][1] else '❌'}")
+                 for n in names]
         passed = sum(ok for _, _, ok, _ in g)
         for name, _, ok, _ in g:
             if not ok:
                 misses[name] += 1
         verdict = "후속편 후보" if passed >= 2 else "개선 필요"
-        lines.append(f"| {r['ep']} | {r['platform']} | " + " | ".join(cells) + f" | {passed}/5 | {verdict} |")
+        lines.append(f"| {r['ep']} | {r['platform']} | " + " | ".join(cells) + f" | {passed}/{len(g)} | {verdict} |")
     if misses:
         worst, n = misses.most_common(1)[0]
         lines += ["", f"**다음 주 고칠 것 1개:** {worst} ({n}편 미달) → {fixes[worst]}"]

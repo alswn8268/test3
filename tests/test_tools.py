@@ -353,3 +353,14 @@ def test_claude_checkmark_needs_official_source_and_quote():
     assert "장면 03" in text and "공식 출처가 아님" in text
     assert "장면 04" in text and "원문 인용이 없음" in text
     assert "장면 05" not in text                       # 사람이 찍은 ✅ 는 사람 책임
+
+
+def test_review_uses_sends_and_swipe_rate_when_present():
+    base = {"ep": "ep01", "platform": "youtube", "views": 1000, "viewed_3s": 750, "avg_watch_sec": 12,
+            "saves": 20, "shares": 2, "profile_visits": 50, "follows": 6}
+    without = review.grade({**base, "sends": None, "viewed_vs_swiped": None})
+    assert len(without) == 5                                   # 빈 선택 칸은 미달로 세지 않음
+    with_new = {n: ok for n, _, ok, _ in review.grade({**base, "sends": 9, "viewed_vs_swiped": 64.0})}
+    assert with_new["보내기율"] is True and with_new["스와이프 안 함"] is False
+    out = review.report([{**base, "sends": 9, "viewed_vs_swiped": 64.0}])
+    assert "보내기율" in out and "4/7" in out

@@ -42,7 +42,7 @@ def main(argv: list[str] | None = None) -> int:
     (d / "topics").mkdir()
     (d / "topics" / ".gitkeep").touch()
     (d / "metrics.csv").write_text(
-        "ep,platform,posted_at,views,viewed_3s,avg_watch_sec,saves,shares,profile_visits,follows\n", encoding="utf-8")
+        "ep,platform,posted_at,views,viewed_3s,avg_watch_sec,saves,shares,profile_visits,follows,sends,viewed_vs_swiped\n", encoding="utf-8")
     (d / "learnings.md").write_text(f"# {a.name} — 배운 것 (최신이 위)\n", encoding="utf-8")
     (d / "backlog.md").write_text(f"# {a.name} — 주제 백로그\n", encoding="utf-8")
     print(f"channels/{a.slug}/ 생성 — channel.json 의 TODO 를 채우세요")
