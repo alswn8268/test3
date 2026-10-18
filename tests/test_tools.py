@@ -173,7 +173,7 @@ def test_post_has_three_platform_sections():
     for sec in ("## 틱톡", "## 유튜브 쇼츠", "## 인스타그램 릴스"):
         assert any(line.startswith(sec) for line in lines), sec
     i = next(n for n, line in enumerate(lines) if line.startswith("## 틱톡"))
-    assert lines[i + 1] == "300줄 복붙 3초면 끝 Ctrl + E"
+    assert lines[i + 1] == "엑셀 300줄 정리 Ctrl + E 하나면 끝"
     assert lines[i + 2] == "저장해두고 다시 보기"
     assert lines[i + 3] == "#엑셀 #직장인 #빠른채우기 #CtrlE #칼퇴단축키"
     assert "제목: Ctrl+E 하나로 300줄 정리" in md
